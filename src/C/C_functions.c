@@ -555,8 +555,8 @@ dpNum_time = &tt;
 			fprintf( stderr, "\n#I.0 - found MODE %d [%s] Code[%d]",*ipMode, caFile, iFindCode1 );
 			fprintf( stderr, "\n#I.0 - for wildcard [%s]",caFile );
 #endif
-			if( iRetCode = IsInTime( MODE_0, caStat, caChan, caFile,
-						dpNum_tima, dpNum_time ) )
+			if( ( iRetCode = IsInTime( MODE_0, caStat, caChan, caFile,
+						dpNum_tima, dpNum_time ) ) )
 			{
 
 				if(iWildCardAll) {
@@ -584,8 +584,8 @@ dpNum_time = &tt;
  
 				while( (iFindCode2 = FileFind(caPath, caFile, AV("&"))) > 0 )
 				{
-					if( iRetCode = IsInTime( MODE_0, caStat, caChan, caFile,
-									dpNum_tima, dpNum_time ) )
+					if( ( iRetCode = IsInTime( MODE_0, caStat, caChan, caFile,
+									dpNum_tima, dpNum_time ) ) )
 					{
 #ifdef DEBUG
 						fprintf( stderr, "\n#II.0 - found MODE %d [%s] Code[%d]",*ipMode, caFile, iFindCode2 );
@@ -665,8 +665,8 @@ dpNum_time = &tt;
 			fprintf( stderr, "\n#III.2 - found MODE %d [%s] Code[%d]",*ipMode, caFile, iFindCode2 );
 			fprintf( stderr, "\n#III.2 - for wildcard [%s]",caWildCard );
 #endif
-			if( iRetCode = IsInTime( MODE_1, caStat, caChan, caFile,
-						dpNum_tima, dpNum_time ) )
+			if( ( iRetCode = IsInTime( MODE_1, caStat, caChan, caFile,
+						dpNum_tima, dpNum_time ) ) )
 			{
 				(void)strcpy( cpName, caFile );
 				*ipRetCode = 0;
@@ -802,7 +802,7 @@ int    iRetCode;
                 fprintf( stderr, "\n##TestTime dpNum_tima %f dpNum_time %f\n\n",iRetCode,caFile ,dpNum_tima, dpNum_time );
 #endif
 
-	if( iRetCode = TestTime( i0Mode, dpNum_tima, dpNum_time, dCmpTime) ) 
+	if( ( iRetCode = TestTime( i0Mode, dpNum_tima, dpNum_time, dCmpTime) ) )
 	{
 #ifdef DEBUG
 		fprintf( stderr, "\n##File in time Code[%d] File[%s]\n\n",iRetCode,caFile );
@@ -856,7 +856,8 @@ char   caTempBuf[BUFLEN],
        pyear[3],
        *cpTemChar,
        *cpTemChar2;
- int    iCount = 0,
+ int    julday(int,int,int),
+        iCount = 0,
  	xx=0;
 double dBackTime;
 

@@ -1,5 +1,6 @@
 #if defined(STDC_HEADERS)
 #include <stdlib.h>
+#include <ctype.h>
 #endif
 #include <stdio.h>
 #include <string.h>

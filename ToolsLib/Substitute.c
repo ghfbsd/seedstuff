@@ -129,7 +129,7 @@ char *cpTokenItem,
      *cpHelpStr = strdup( cpSourceStr );
 
 	strcpy( cpTokenStr, cpSourcePattern ); 
-	while( cpTokenItem = GetToken( WILDCARD ) )
+	while( ( cpTokenItem = GetToken( WILDCARD ) ) )
 	{
 		BuildSourceDelimStr( cpHelpStr,cpTokenItem ); 
 	}

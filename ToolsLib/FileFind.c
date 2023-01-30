@@ -66,7 +66,7 @@ static TREE *root     = NULL,
 LEAF        *LLeaf1   = NULL,
             *LLeaf2   = NULL;
 static long lKeyPos   = 0L;
-static iCount         = 0;
+static int  iCount    = 0;
 	 
 	 
 /* ======================================================================== */
@@ -171,6 +171,8 @@ int	FileFind( char *cpStartDir,
 /* ======================================================================== */
 {
 int	FileFindEntrys( char*, char*, char* ),
+        BufferFilePath( char*, char* ),
+	SetSearchFlags( char* ),
         iFindCode = -1;
 
 
@@ -301,7 +303,7 @@ DIR		*dirPtr;
 struct dirent	*dirDirEntry;
 char		cpNewDirFound[BUFLEN];
 		
-	if( dirPtr = opendir( cpStartDir ) )
+	if( ( dirPtr = opendir( cpStartDir ) ) )
 	{
                for( dirDirEntry = readdir( dirPtr );
 		    dirDirEntry != NULL; 
@@ -319,14 +321,16 @@ char		cpNewDirFound[BUFLEN];
 				if( iVerboseFlag ) {
 					fprintf( stderr, "\n* step down call FileFindEntrys( %s, %s,%s)",cpNewDirFound,cpSearchPattern,cpWhatSearchFlag );
 				}
-					if( iFileCount = 
+					if( ( iFileCount = 
 						   FileFindEntrys(cpNewDirFound,
 				                                  cpSearchPattern,
-							          cpWhatSearchFlag) )
+							          cpWhatSearchFlag) ) )
+                                        {
 						if( iFileCount >= 0 )
 							iFound += iFileCount;
 						else
 							return( iFileCount );
+                                        }
 				}
 			}			
 			else if( iIsDirReturn == 0 )
@@ -553,9 +557,9 @@ LEAF        LpTemp;
 		if( iSkipUpFlag )         /* skip up one record             */
 			lKeyPos++;
 		LpTemp.lKey = lKeyPos;
-		if( LLeaf1 = AvlFind( (TREE*)rootSort,
+		if( ( LLeaf1 = AvlFind( (TREE*)rootSort,
                                       (LEAF*)&LpTemp,
-                                      MemKeyCmp) )
+                                      MemKeyCmp) ) )
 		{
 			strcpy( cpPath, LLeaf1->cpPathName );
 			strcpy( cpFile, LLeaf1->cpFileName );
@@ -569,8 +573,7 @@ LEAF        LpTemp;
 		
 	}
 	else if( iNameDownFlag || iNameUpFlag )
-        {                                 /* 
-					  /* sort upwards or downwards      */        
+        {                                 /* sort upwards or downwards      */        
 		if( !root )
 		{
 			/*PERROR( "", "EMPTY TREE" );*/
@@ -590,9 +593,9 @@ LEAF        LpTemp;
 				lKeyPos++;
 				strcpy( caPath, LLeaf1->cpPathName );
 				strcpy( caFile, LLeaf1->cpFileName );
-				if( iCode = AvlDelete(&root, 
+				if( ( iCode = AvlDelete(&root, 
                                                         LLeaf1,
-                                                        MemStrCmp) )
+                                                        MemStrCmp) ) )
 				{
 				/*	AvlFreeAll( &root );*/
 
@@ -796,7 +799,7 @@ int		LastSubString ( char*, char* ),
 		     {
 			strncpy( cpHelpToken, cpToken+1, strlen(cpToken)-2 );
 			*(cpHelpToken+strlen(cpToken)-2) = '\0'; 
-		      	if( cpSubPattern = strstr( cpHelpStr, cpHelpToken ) )
+		      	if( (cpSubPattern = strstr( cpHelpStr, cpHelpToken )) )
 			{
 				strcpy( cpHelpStr,
 			 	        cpSubPattern + strlen(cpHelpToken) );
@@ -908,7 +911,7 @@ char		caTempBuffer[STRLEN];
 }
 					
 /* ######################################################################## */
-/* various tests
+/* various tests                                                            */
 /* ######################################################################## */
 /*
 #define TEST_FILE_FIND_MAIN

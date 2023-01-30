@@ -18,7 +18,7 @@ HEADER *AvlTreeAlloc( int size )
 {
     HEADER  *alloc_p;
 
-    if( alloc_p = (HEADER*)malloc( size + sizeof(HEADER) ) )
+    if( ( alloc_p = (HEADER*)malloc( size + sizeof(HEADER) ) ) )
     {
         alloc_p->left = NULL;
         alloc_p->right = NULL;

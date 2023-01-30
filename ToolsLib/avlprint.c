@@ -24,7 +24,7 @@ static  char    Map[64/8];
 
 #define TESTBIT( c )    ( Map[c >> 3] & (1 << ( c & 0x07 )) )
 
-static  SetBit( int c, int val )
+static  void SetBit( int c, int val )
 {
     if( val )
         Map[c >> 3] |= 1 << (c & 0x07);
@@ -32,7 +32,7 @@ static  SetBit( int c, int val )
         Map[c >> 3] &= ~( 1 << (c & 0x07) );
 }
 
-static  Trav( HEADER* root, int amleft )
+static  void Trav( HEADER* root, int amleft )
 {
 static  int depth = -1;
 static  int i;

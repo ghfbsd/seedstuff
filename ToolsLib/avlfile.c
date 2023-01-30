@@ -8,7 +8,7 @@ static  int    (*Writeavl)();
 static  int    (*Readavl)();
 static  int    (*Icmp)();
 
-static  FilePrint( HEADER* root, FILE* stream )
+static  void FilePrint( HEADER* root, FILE* stream )
 {
 
     if( root )

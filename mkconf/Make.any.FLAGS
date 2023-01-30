@@ -3,11 +3,11 @@
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   
 #DBG		= -DDEBUG
-DBG             = -gdwarf-2
+DBG             =
 INCLUDES	= -I../include
 CFLAGS          = $(DBG) -g -O2  -DREFTEK -DLINUX -DHAVE_QUEUE -DSTDC_HEADERS $(INCLUDES) 
-FFLAGS          = $(DBG)      $(INCLUDES) 
-LDFLAGS  	= -gdwarf-2
+FFLAGS          = $(DBG)    -std=legacy  -g -O -Wuninitialized  -fbounds-check $(INCLUDES) 
+LDFLAGS  	=
 OS		= $(OS)
 LIBS     	= 
 CLOC		= ../src/C
