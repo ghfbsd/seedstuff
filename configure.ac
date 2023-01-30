@@ -179,6 +179,7 @@ dnl fi
 LIBS="${LDFLAGS} ${LIBS}"
 
 dnl Check -m32 option for compiler
+AC_MSG_CHECKING(Fortran 32 bit compiling)
 AC_LANG_PUSH([Fortran 77])
 TMP_SV_FFLAGS="${FFLAGS}" FFLAGS="${FFLAGS} -m32"
 AC_TRY_COMPILE([],[
@@ -187,14 +188,35 @@ AC_TRY_COMPILE([],[
       array(2)=2
 ],[FM32="-m32"],[FM32=])
 FFLAGS="${TMP_SV_FFLAGS}"
+case _$FM32 in
+   _) AC_MSG_RESULT(not available)
+      ;;
+   _-m32) AC_MSG_RESULT(available)
+      ;;
+   *) AC_MSG_RESULT(indeterminate - good luck!)
+esac
 AC_LANG_POP([Fortran 77])
 
+AC_MSG_CHECKING(C 32 bit compiling)
 AC_LANG_PUSH([C])
 TMP_SV_CFLAGS="${CFLAGS}" CFLAGS="${CFLAGS} -m32"
 AC_TRY_COMPILE([],[
       int i=1;
 ],[CM32="-m32"],[CM32=])
 CFLAGS="${TMP_SV_CFLAGS}"
+case _$CM32 in
+   _) AC_MSG_RESULT(not available)
+      ;;
+   _-m32) case _$FM32 in
+      _) AC_MSG_RESULT([available, but not in Fortran, so suppressed])
+         CM32=
+         ;;
+      *) AC_MSG_RESULT(available)
+         ;;
+      esac
+      ;;
+   *) AC_MSG_RESULT(indeterminate - good luck!)
+esac
 AC_LANG_POP([C])
 
 dnl Fortran/C interoperability
@@ -271,6 +293,14 @@ AC_TRY_COMPILE([],[
       array(1)=1
       array(2)=2
 ],[FDEBUG=" -O -Wuninitialized"],[FDEBUG=])
+rm -f conftest.$ac_objext conftest.$ac_ext
+dnl Check Fortran for language legacy standard
+FFLAGS="-std=legacy"
+AC_TRY_COMPILE([],[
+      integer array(2)
+      array(1)=1
+      array(2)=2
+],[F77OPTS="${F77OPTS} -std=legacy"],[])
 rm -f conftest.$ac_objext conftest.$ac_ext
 dnl Check for ishft Fortran intrinsic
 FFLAGS=
