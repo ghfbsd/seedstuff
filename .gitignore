@@ -1,3 +1,4 @@
+TODO
 Makefile
 .sachist
 .gdb_history
@@ -7,6 +8,5 @@ config.log
 config.status
 configure
 contrib/
-lib/*.[oa]
-lib/*.l[oa]
+lib/
 mkconf/*.FLAGS
