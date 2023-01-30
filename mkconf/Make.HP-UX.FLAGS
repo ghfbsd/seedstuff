@@ -1,0 +1,16 @@
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Compiler flags
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+#DBG		= -DDEBUG -g
+DBG		= 
+INCLUDES	= -I../include
+CCFLAGS 	= -Ae +e -O -DF77 $(DBG) -c $(INCLUDES) -DHP
+FC		= f77
+FFLAGS   	= +es +e $(INCLUDES) +U77 -DHP
+LDFLAGS  	=  
+OS		= HP-UX
+LIBS            = -lU77
+CLOC		= ../src/C
+FLOC		= ../src/Fortran
+TOOLLOC		= ../ToolsLib

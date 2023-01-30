@@ -1,0 +1,27 @@
+MLOC		= ../../mkconf
+include	$(MLOC)/Make.$(OS).FLAGS
+
+MAKEFILE      = Make.$(ARCH).CLib
+
+DEST	      = ../../lib/$(OS)
+
+LIBRARY	      = libC$(OS).a
+
+SRCS	      = C_functions.c \
+		TapeRead.c
+
+OBJS	      = \
+		$(DEST)/C_functions.o \
+		$(DEST)/TapeRead.o
+
+
+$(DEST)/$(LIBRARY):	$(OBJS) 
+		ar cru $(DEST)/$(LIBRARY) $(OBJS)
+		@if [ $(OS) = "SunOS4.1.x" ] ; then \
+			ranlib $(DEST)/$(LIBRARY) ; \
+		fi
+		
+update:         $(DEST)/$(LIBRARY)
+
+$(DEST)/%.o: %.c
+	$(CC) $(CCFLAGS) -c $< -o $@

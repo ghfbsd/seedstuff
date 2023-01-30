@@ -1,0 +1,34 @@
+MLOC		= ../../mkconf
+include	$(MLOC)/Make.any.FLAGS
+DEBUG		= $(DBG)
+
+MAKEFILE      = Make.any.FLib
+
+DEST	      = ../../lib/$(OS)
+
+LIBRARY	      = libF$(ARCH).a
+
+SRCS	      = \
+		cre_seed_head_sub.f \
+		copy_seed_sub.f \
+		read_grf.f \
+		not.vax.functions_c.f 
+OBJS	      = \
+		$(DEST)/cre_seed_head_sub.o \
+		$(DEST)/copy_seed_sub.o \
+		$(DEST)/read_grf.o \
+		$(DEST)/not.vax.functions_c.o 
+
+CCUSED	      = $(CCFLAGS) $(DEBUG)
+FFUSED	      = $(FFLAGS) $(DEBUG)
+
+$(DEST)/$(LIBRARY):	$(OBJS) $(SRCS)
+		ar cru $(DEST)/$(LIBRARY) $(OBJS)
+		ranlib $(DEST)/$(LIBRARY)
+		
+update:         $(DEST)/$(LIBRARY)
+
+$(DEST)/%.o: %.f
+	$(FC) $(FFUSED) -c $< -o $@
+
+$(DEST)/cre_seed_head_sub.o $(DEST)/copy_seed_sub.o: ../include/head_seed.inc

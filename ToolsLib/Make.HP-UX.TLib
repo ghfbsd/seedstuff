@@ -1,0 +1,72 @@
+MLOC		= ../mkconf
+include	$(MLOC)/Make.$(OS).FLAGS
+
+MAKEFILE      = Make.$(ARCH).TLib
+
+DEST	      = ../lib/$(OS)
+
+LIBRARY	      = libT$(OS).a
+
+OBJS	      = $(DEST)/FileFind.o \
+		$(DEST)/GetSubStr.o \
+		$(DEST)/StrMatch.o \
+		$(DEST)/StrToLower.o \
+		$(DEST)/StrToUpper.o \
+		$(DEST)/Substitute.o \
+		$(DEST)/avldelete.o \
+		$(DEST)/avlfile.o \
+		$(DEST)/avlfind.o \
+		$(DEST)/avlfree.o \
+		$(DEST)/avlinsert.o \
+		$(DEST)/avlminmax.o \
+		$(DEST)/avlprint.o \
+		$(DEST)/avlreplace.o
+
+
+$(DEST)/$(LIBRARY):	$(OBJS) 
+		ar ru $(DEST)/$(LIBRARY) $(OBJS)
+		
+update:         $(DEST)/$(LIBRARY)
+
+$(DEST)/FileFind.o:	FileFind.c
+	$(CC) $(CCFLAGS) FileFind.c -o $@
+
+$(DEST)/GetSubStr.o:	GetSubStr.c
+	$(CC) $(CCFLAGS) GetSubStr.c -o $@
+
+$(DEST)/StrMatch.o:	StrMatch.c
+	$(CC) $(CCFLAGS) StrMatch.c -o $@
+
+$(DEST)/StrToLower.o:	StrToLower.c
+	$(CC) $(CCFLAGS) StrToLower.c -o $@
+
+$(DEST)/StrToUpper.o:	StrToUpper.c
+	$(CC) $(CCFLAGS) StrToUpper.c -o $@
+
+$(DEST)/Substitute.o:	Substitute.c
+	$(CC) $(CCFLAGS) Substitute.c -o $@
+
+$(DEST)/avldelete.o:	avldelete.c
+	$(CC) $(CCFLAGS) avldelete.c -o $@
+
+$(DEST)/avlfile.o:	avlfile.c
+	$(CC) $(CCFLAGS) avlfile.c -o $@
+
+$(DEST)/avlfind.o:	avlfind.c
+	$(CC) $(CCFLAGS) avlfind.c -o $@
+
+$(DEST)/avlfree.o:	avlfree.c
+	$(CC) $(CCFLAGS) avlfree.c -o $@
+
+$(DEST)/avlinsert.o:	avlinsert.c
+	$(CC) $(CCFLAGS) avlinsert.c -o $@
+
+$(DEST)/avlminmax.o:	avlminmax.c
+	$(CC) $(CCFLAGS) avlminmax.c -o $@
+
+$(DEST)/avlprint.o:	avlprint.c
+	$(CC) $(CCFLAGS) avlprint.c -o $@
+
+$(DEST)/avlreplace.o:	avlreplace.c
+	$(CC) $(CCFLAGS) avlreplace.c -o $@
+

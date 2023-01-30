@@ -1,0 +1,21 @@
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Compiler flags
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  
+#DBG		= -DDEBUG -g
+DBG             = -gdwarf2 -O -Wuninitialized
+INCLUDES	= -I../include
+#f77/g77
+CCFLAGS         = $(DBG) -m32 -O3 -DLINUX -DREFTEK $(INCLUDES) 
+FFLAGS          = $(DBG) -DREFTEK -fno-globals $(INCLUDES) 
+#gfortran
+#CCFLAGS         = $(DBG) -O3 -DLINUX -DREFTEK $(INCLUDES) 
+#FFLAGS          = $(DBG) -DREFTEK -fsecond-underscore $(INCLUDES) 
+LDFLAGS  	= -gdwarf2
+OS		= Darwin
+LIBS     	= 
+CLOC		= ../src/C
+FLOC		= ../src/Fortran
+TOOLLOC		= ../ToolsLib
+
+	

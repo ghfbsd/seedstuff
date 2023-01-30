@@ -1,0 +1,1346 @@
+	function read_grf(unit,idir,mode,istim,irec,jbuf,iftim,iftsc,timcr,
+     &	stat,chan,net_id,rate,nsamp)
+c
+	implicit integer(a-z)
+	integer*2 ibuf(3840)
+	integer jbuf(*),kan(19)
+	character idir*(*),stat*(*),chan*(*),net_id*(*),stat_grf(19)*5,
+     &	chan_grf(19)*3
+	real*4 rate,rate_grf
+	data kan/1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19/
+	data stat_grf/'GRA1','GRA1','GRA1','GRA2','GRA3','GRA4','GRB1','GRB1',
+     &	'GRB1','GRB2','GRB3','GRB4','GRB5','GRC1','GRC1','GRC1','GRC2',
+     &	'GRC3','GRC4'/
+	data chan_grf/'BHZ','BHN','BHE','BHZ','BHZ','BHZ','BHZ','BHN','BHE',
+     &	'BHZ','BHZ','BHZ','BHZ','BHZ','BHN','BHE','BHZ','BHZ','BHZ'/
+	data nch/19/,idt/1/,nwk/200/,nsec/10/,rate_grf/20./,lhead/20/
+	data nrch/1/,nchan/1/
+c
+	if(mode.eq.2) then
+	  ird=0
+	  nchan=nchan+1
+	  if(nchan.gt.nch) then
+	    nchan=1
+	    ird=1
+	    irtim=irtim+1
+	  endif
+	else
+	  irtim=istim
+	  ird=1
+	  nchan=1
+	endif
+c
+	 if(ird.eq.1) then
+	  call rdisc(unit,ibuf,irtim,idir,mode,0,nch,kan,idt,ilen,iftm,ichk)
+	  mode=2
+	  iftim=iftm*10
+	  iftsc=0
+	  timcr=0
+	  net_id='GF'
+	  rate=rate_grf
+	  nsamp=nwk
+	endif
+c
+	kk=kan(nchan)
+	if(ichk.le.0) then
+	  do i=1,nwk
+	    ii=lhead+(i-1)*nch+kk
+	    jbuf(i)=change_i4(ibuf(ii))
+	  enddo
+	  stat=stat_grf(kk)
+	  chan=chan_grf(kk)
+	endif
+c
+	read_grf=ichk
+c
+	return
+	end
+	SUBROUTINE RDISC(IDSC,ibuf,IBLCK,ddir,mode,indf,NCH,KAN,IDT,NDAT,
+     &	iftim,ICHK)
+c
+c   RDISC reads data volumes in compressed GRF file format (K format) and
+c   returns data records in compressed (K) or uncompressed (H or Y format)
+c   for selected channels and sampling factors
+c
+c   Parameters:
+c     idsc  - input unit (ip)
+c     ibuf  - output buffer (op)
+c     iblck - searched time in 10-sec since 1.1.1970 (ip)
+c     ddir  - data directory (ip)
+c     mode  - lookup mode (iop)
+c             optional parameter: 0 - begin
+c                                 1 - jump to specific data
+c                                 2 - look for next data
+c     indf  - output data format qualifier (ip)
+c             0 - H format (old uncompressed file format)
+c             1 - Y format (R. Kinds uncompressed file format)
+c             2 - K format (compressed tape format)
+c     nch   - number of channels (ip)
+c     kan   - channel array (1-19) (ip)
+c     idt   - resampling factor (ip)
+c     ndat  - length of output buffer
+c     iftim - found time in 10-sec since 1.1.1970 (op)
+c     ichk  - error status (iop)
+c             ip: neg. - no error or warning on sys$output
+c             op: -3 - warning: pointer check error 
+c                 -2 - warning: no header found 
+c                 -1 - warning: no pointer record found - sequential read done
+c                  0 - normal
+c                  1 - directory not found
+c                  2 - EOV
+c                  3 - time not found (if mode = 2 next record is returned)
+c                  4 - read error or decompression error
+c
+	character ddir*(*)
+	integer*2 ibuf(*),ISCR(3840),ihead,ibbf(10)
+	byte bbf(20),bi
+	integer binst(20),kan(*)
+	common /head/ihead(500)
+	equivalence(bbf(1),ibbf(1))
+	data binst/1,2,3,4,5,6,8,9,10,11,12,13,14,15,16,17,18,19,20,0/
+	data ks/19/,nsamp/200/,inhead/40/
+C
+	ichi=ichk
+	ichk=0
+	itim=iblck
+	ndat=0
+	ndt=0
+C
+C   Lesen des gesuchten Blocks
+C
+100	ichr=ichi
+	call rdbgrf(idsc,ddir,ibuf,ihead,mode,itim,iftim,nfil,0,ichr,ilen)
+	mode=2
+	if(ichr.ne.0) goto 999
+c---Dekomprimieren
+	if(indf.lt.2.or.nch.lt.ks.or.idt.ne.1) then
+	  ichc=ichi
+	  call rcomp(ibuf,ilen,ks,inhead,nsamp,ichc)
+	  if (ichc.gt.10) GOTO 999
+	  if(indf.eq.0) then
+c---H Format
+	    lhead=20
+	  else
+c---Y und K Format
+	    lhead=40
+	  endif
+	  ndat=nch*nsamp+lhead
+	  ilen=ndat
+	else
+	  ndat=ilen
+	  return
+	endif
+	ndt=ndt+1
+C
+C   Spurauswahl
+C
+	if(ndt.eq.1) then
+	  iblck=iftim
+	  do i=1,inhead
+	    iscr(i)=ibuf(i)
+	  enddo
+	endif	
+	if(nch.lt.ks) then
+	  iy=inhead
+	  do jj=1,nsamp
+	    jj1=(jj-1)*ks+inhead
+	    do j=1,nch
+	      ix=jj1+kan(j)
+	      iy=iy+1
+	      ibuf(iy)=ibuf(ix)
+	    enddo
+	  enddo
+	endif
+c
+c   Resampling
+c
+	if(idt.ge.1) then
+	  ia=(ndt-1)*nch*nsamp/idt+inhead+1
+	  call resam(nsamp,nch,inhead,idt,ibuf,iscr(ia))
+	endif
+C
+	IF(NDT.EQ.IDT) GOTO 24
+	GOTO 100
+c
+c   Umspeichern der Daten aus Scratch-Feld ISCR
+c
+24	do i=1,lhead
+	  ibuf(i)=iscr(i)
+	enddo
+	if(idt.gt.1) then
+	  do i=lhead+1,ndat
+	    ii=i-lhead+inhead
+	    ibuf(i)=iscr(ii)
+	  enddo
+	else
+	  if(inhead.ne.lhead) then
+	    do i=lhead+1,ndat
+	      ii=i-lhead+inhead
+	      ibuf(i)=ibuf(ii)
+	    enddo
+	  endif
+	endif
+c
+c   Auffuellen des Blockheaders (H- und Y-Format)
+c
+	if(indf.lt.2) then
+	  ibuf(1)=ndat*2
+	  ibuf(5)=nch
+	  ibuf(16)=idt
+	  ibuf(20)=20
+c---Modifikation fuer andere Spurverteilung
+	  do i=1,20
+	    bi=0
+	    if(i.le.nch) bi=binst(kan(i))
+	    modi=mod(i,2)
+	    if(modi.eq.1) ii=i+1
+	    if(modi.eq.0) ii=i-1
+	    bbf(ii)=bi
+	  enddo
+	  do i=1,10
+	    ibuf(i+5)=ibbf(i)
+	  enddo
+c---Generatorkonstanten fuer Y-Format
+	  if(indf.eq.1) then
+	  ibuf(1)=ndat
+	    do i=1,20
+	      k=kan(i)
+	      if(k.gt.6) k=k+1
+	      ii=34+(k-1)*17
+	      gen=ihead(ii)
+	      if(gen.gt.0.) then
+	        igen=4000000./gen
+	        ibuf(20+i)=igen
+	      else
+	        ibuf(20+i)=0
+	      endif
+	      if(i.gt.nch) ibuf(20+i)=0
+	    enddo
+	  endif
+	else
+c
+c   Komprimieren fuer K-Format
+c
+c	call komp(ibuf,ndat,nch,lhead,ilen,ichc)
+c---Modifikation Tape-Header fuer andere Spurverteilung
+	ihead(6)=nch
+	  do i=1,20
+	    bi=0
+	    if(i.le.nch) bi=binst(kan(i))
+	    modi=mod(i,2)
+	    if(modi.eq.1) ii=i+1
+	    if(modi.eq.0) ii=i-1
+	    bbf(ii)=bi
+	  enddo
+	  do i=1,10
+	    ihead(i+8)=ibbf(i)
+	  enddo
+	endif
+	ndat=ilen
+C
+999	if(ichc.eq.0) then
+	  ichk=ichr
+	else
+	  ichk=4
+	endif
+c
+	return
+	end
+	subroutine rdbgrf(idsc,ddir,ibuf,ihead,mode,istim,iftim,nfil,icp,
+     &	ichk,ilen)
+c
+	character ddir*(*) 
+	integer first_time
+	integer*2 ibuf(*),ihead(*)
+	data ianf/0/
+c
+c   RDBGRF reads data volumes in compressed GRF file format (K format) and
+c   returns data records in original compressed form
+c
+C   Parameters:
+c     idsc  - input unit (ip)
+c     ddir  - data directory (ip)
+c     ibuf  - output buffer (op)
+c     ihead - actual (tape) header (op)
+c     mode (iop)
+c             mode = 0 : open volume and search specific time (startmode)
+c                  = 1 : search specific time
+c                  = 2 : read next record
+c     istim - searched time (10-sec since 1.1.1970) (ip)
+c     iftim - found time (op)
+c     nfil  - file counter (iop)
+c     icp   - check parameter (0 - no check) (ip)
+c     ichk  - error status (iop)
+c             ip: neg. - no error or warning on sys$output
+c             op: -3 - warning: pointer check error 
+c                 -2 - warning: no header found 
+c                 -1 - warning: no pointer record found - sequential read done
+c                  0 - normal
+c                  1 - directory not found
+c                  2 - EOV
+c                  3 - time not found (if mode = 2 next record is returned)
+c                  4 - read error
+c     ilen  - length of output buffer (op)
+c
+	ichi=ichk
+	ichk=0
+	ilen=0
+c
+	if(ianf.eq.0) mode=0
+	if(mode.eq.0) then
+	  if(ianf.eq.0) nfil=0
+	  if (istim.eq.0) then
+	    istim = first_time(idsc,ddir,ibuf,ndat,ichf)
+	    if (ichf.ne.0) goto 999
+	  endif
+	  icho=ichi
+	  call opngrf(idsc,ddir,ihead,istim,iftim,nfrec,icp,icho)
+	  if(icho.gt.0) then
+	    if(icho.eq.3) then
+	      ichk=1
+	      goto 999
+	    else
+	      ichk=icho
+	    endif
+	  else
+	    nfil=nfil+1
+	  endif
+	  mode=1
+	  nrec=1
+	endif
+	if(ichk.gt.0) goto 999
+	if(mode.eq.2) istim=iftim+1
+	nrd=0
+	ntry=0
+c
+100	if(mode.eq.2) then
+	  nrec=nrec+1
+	else
+	  ndif=istim-iftim
+	  if(nrec.eq.1) nrec=2
+	  if(nrd.gt.3) then
+	    ndif=ndif/2
+	    nrd=0
+	    ntry=ntry+1
+	  endif
+	  nrec=nrec+ndif
+	  if(nrec.lt.2.or.nrec.gt.nfrec+1) then
+	    icho=ichi
+	    call opngrf(idsc,ddir,ihead,istim,iotim,nfrec,icp,icho)
+	    if(icho.gt.0) then
+	      if(icho.eq.3) then
+	        ichk=1
+	        goto 999
+	      else
+	        ichk=icho
+	      endif
+	    else
+	      nfil=nfil+1
+	    endif
+	    nrec=istim-iotim+2
+	    if((nrec.lt.2.or.nrec.gt.nfrec+1).and.ichk.ne.2) then
+	      goto 105
+	    endif
+	  endif
+	endif
+	if(ichk.eq.2) goto 999
+	ichr=ichi
+	nrec_s=nrec
+	call rdfix(idsc,1024,nfrec,nrec,ilen,iftim,ibuf,icp,ichr)
+	nrd=nrd+1
+	if(ichr.eq.1) goto 110
+c	if(ichr.eq.2.and.(mode.eq.2.or.nrec.lt.nrec_s)) goto 110
+	if(ichr.eq.2.and.(mode.eq.2.or.(nrec.lt.nrec_s.and.nrd.gt.2))) goto 110
+	if(ichr.eq.4) goto 120
+	if(mode.eq.2) goto 999
+	if(iftim.ne.istim.and.ntry.lt.10) goto 100
+	if(iftim.eq.istim) goto 999
+	ichk=3
+	goto 999
+c
+c   Daten im File nicht gefunden
+c
+105	ichk=3
+	iftim=iotim
+	nrec=2
+	goto 999
+c
+c  Lesen ueber Fileende
+c
+110	if(nrec.lt.nfrec.or.nfrec.eq.360) then
+	  iotim=(istim-1)/360*360+360
+	else
+	  iotim=istim
+	endif
+	icho=ichi
+	call opngrf(idsc,ddir,ihead,iotim,iftim,nfrec,icp,icho)
+	if(icho.eq.3) then
+	  ichk=1
+	  goto 999
+	else
+	  ichk=icho
+	endif
+	if(ichk.eq.-4) ichk=3
+	if(icho.le.0) nfil=nfil+1
+	nrec=1
+	if(icho.le.0) goto 100
+	goto 999
+c
+c  Lesefehler
+c
+120	ichk=ichr
+	if(ichi.ge.0) write(*,*) 'RDBGRF read error:',ichk,nrec,istim,iftim
+	goto 999
+c
+999	if(ichf.ne.0) then
+	  ichk=ichf
+	else
+	endif
+	if(ianf.eq.0) then
+	  mode=2
+	  ianf=1
+	endif
+c
+	return
+	end
+	subroutine opngrf(idsc,ddir,ihead,itime,iotim,nfrec,icp,ichk)
+c
+c   OPNGRF tries to open the data file in K format which should contain the
+c   specified time
+c
+c   Parameter:
+c     idsc  - input unit (ip)
+c     ddir  - data directory (ip)
+c     ihead - output file for tape header (op)
+c     itime - searched time in 10-sec since 1.1.1970 (ip)
+c     iotim - found time in 10-sec since 1.1.1970 (op)
+c     nfrec - max. number of records (hour files: 360; event files: 511)
+c     icp   - check parameter (0 - no check) (ip)
+c     ichk  - error status (iop)
+c             ip: neg. - no error or warning on sys$output
+c             op: -4 - warning: event file found only
+c                 -3 - warning: pointer check error 
+c                 -2 - warning: no header found 
+c                 -1 - warning: no pointer record found - sequential read done
+c                  0 - normal
+c                  1 - EOF
+c                  2 - EOV
+c                  3 - directory not found
+c                  4 - read error
+c
+	integer cyear
+	integer*2 ihead(1)
+	character new_file*132,open_file*132,ddir*(*)
+	data iopen/0/
+c
+	ichi=ichk
+	ichk=0
+c	
+	icha=ichi
+	call abszeit(0,itime,iyear,iday,ih,im,is,icha)
+	call sub_datum(0,iday,iyear,mon,itag)
+C----		ndir=index(ddir,' ')-1
+	ndir=lenc(ddir)
+	if(iopen.eq.1.and.nfrec.eq.511) then
+	  write(new_file,9) ddir(1:ndir),cyear(iyear),mon,itag,ih,im,is
+9	  format(a,'/grf',6i2.2,'.dat')
+	  idev=1
+	else
+	  write(new_file,19) ddir(1:ndir),cyear(iyear),mon,itag,ih
+19	  format(a,'/grf',4i2.2,'.dat')
+	  idev=0
+	endif
+	if(iopen.ne.0) then
+c	  indxa=index(new_file,'grf')
+	  indxa=1
+	  indxe=index(new_file,'.dat')-1
+	  indx1=index(open_file,new_file(indxa:indxe))
+	  if(open_file(1:indxa-1).ne.new_file(1:indxa-1)) indx1=0
+	else
+	  indx1=0
+	endif
+	if(iopen.eq.0.or.indx1.eq.0) then
+	  if(iopen.ne.0) then
+	    close(idsc)
+	    iopen=0
+	  else
+	    if(idev.eq.0) then
+	      nfrec=360
+	    else
+	      nfrec=511
+	    endif
+	    open_file=new_file
+	  endif
+	  open(idsc,name=new_file,status='old',form='unformatted',
+     &	  access='direct',recl=2048,err=990)
+c     &	  access='direct',recl=512,err=990)
+	  if(idev.eq.0) then
+	    nfrec=360
+	  else
+	    nfrec=511
+	  endif
+	  open_file=new_file
+	endif
+	ichr=ichi
+	call rdfix(idsc,1024,nfrec,1,ndat,iotim,ihead,icp,ichr)
+	ichk=ichr
+	iopen=1
+	goto 999
+c
+990	if(nfrec.eq.360) new_file=open_file
+	icnt=1
+	ih1=ih
+	itg1=itag
+	mon1=mon
+	ichn=ichi
+	ichn=next_grffile(1,ddir,new_file,nfrec)
+	if(ichn.eq.3) goto 9999
+995	if(nfrec.eq.511.and.ichn.eq.2) then
+	  ih1=ih1-1
+	  itg1=itg1
+	  mon1=mon1
+	  if(ih1.lt.0) then
+	    ih1=23
+	    itg1=itag-1
+            if(itg1.lt.1) then
+	      itg1=30
+	      mon1=mon-1
+	    endif
+	  endif
+	  write(new_file,9) ddir(1:ndir),cyear(iyear),mon1,itg1,ih1
+	  ichn=ichi
+	  ichn=next_grffile(1,ddir,new_file,nfrec)
+	  if(ichn.eq.3) goto 9999
+	endif
+	if(ichn.le.0) then
+	  if(ichn.eq.-2) then
+	    indxa=index(new_file,'grf')
+	    indxe=index(new_file,'.dat')-1
+	    indx1=index(open_file,new_file(indxa:indxe))
+	    if(indx1.gt.0.and.indxe.gt.indxa) then
+	      new_file=open_file
+	      ichn=ichi
+	      ichn=next_grffile(1,ddir,new_file,nfrec)
+	      if(ichn.eq.3) goto 9999
+	      ichk=-4
+	      if(ichn.eq.2) ichk=2
+	    endif
+	  endif
+	  open(idsc,name=new_file,status='old',form='unformatted',
+     &	  access='direct',recl=2048,err=9999)
+c     &	  access='direct',recl=512,err=9999)
+	  ichr=ichi
+	  call rdfix(idsc,1024,nfrec,1,ndat,iotim,ihead,icp,ichr)
+	  iopen=1
+	  open_file=new_file
+	else
+	  if(icnt.eq.1) then
+	    icnt=2
+	    goto 995
+	  else
+	    new_file=open_file
+	    ichn=ichi
+	    ichn=next_grffile(1,ddir,new_file,nfrec)
+	    if(ichn.eq.3) goto 9999
+	    open(idsc,name=new_file,status='old',form='unformatted',
+     &	    access='direct',recl=2048,err=9999)
+c     &	    access='direct',recl=512,err=9999)
+	    ichr=ichi
+	    call rdfix(idsc,1024,nfrec,1,ndat,iotim,ihead,icp,ichr)
+	    iopen=1
+	    open_file=new_file
+	    ichk=-4
+	    if(ichn.eq.2) ichk=2
+	  endif
+	endif
+c
+999	return
+c
+9999	if(ichn.eq.3) then
+	  ichk=3
+	else
+	  ichk=2
+	endif
+	goto 999
+	end
+	subroutine rdfix(idsc,nwfix,nfrec,nrec,ndat,iftim,ibuf,icp,ichk)
+c
+	integer*2 ibuf(*),ibfix(1024),iprec(512),ipanf(512),
+     &	jpoint(1024)
+        external ltime
+	data nrect/0/
+c
+c
+c   RDFIX reads logical data records out of physical data records 
+c
+c   Parameters:
+c     idsc  - input unit (ip)
+c     nwfix - lenght of physical record (ip)
+c     nrec  - wanted logical record no. (ip)
+c     ndat  - length of read logical record (op)
+c     iftim - found time (10-sec since 1.1.1970) (ip)
+c     ibuf  - output buffer (op)
+c     icp   - check parameter (0 - no check) (ip)
+c     ichk  - error status (iop)
+c             ip: neg. - no error or warning on sys$output
+c             op: -3 - warning: pointer check error 
+c                 -2 - warning: no header found 
+c                 -1 - warning: no pointer record found - sequential read done
+c                  0 - normal
+c                  1 - EOF
+c                  2 - EOF caused by incomplete file
+c                  4 - read error
+c
+	ichi=ichk
+	ichk=0
+	if(nrec.gt.nrect.and.nrect.gt.0) then
+	  if(nrec.le.nfrec) then
+	    ichk=2
+	    nrec=nrect
+	  else
+	    ichk=1
+	    return
+	  endif
+	endif
+c
+c---Lesen Header
+c
+	if(nrec.lt.2) then
+	  irec=1
+	  read(idsc,rec=irec,err=880) (ibfix(i),i=1,nwfix)
+#if defined (SUN4)
+	  call fiswap(nwfix,ibfix,ibfix)	! swap for SUN only
+#endif
+	  ndat=ibfix(2)
+	  if(ndat.eq.500) then
+	    do i=1,ndat
+	      ibuf(i)=ibfix(i+1)
+	    enddo
+	    iyr=ibuf(2)
+	    idy=ibuf(3)
+	    itm=ibuf(4)
+	    iftim=ltime(iyr,idy,itm,icht)
+	    iltim=1
+	    if(icht.ne.0) goto 880
+	    nrect=0
+	    ilast=1
+c
+c---Lesen Pointer Record
+c
+	    iend=ibuf(20)
+	    if(iend.ne.0) then
+	      ibuf(20)=0
+	      read(idsc,rec=iend) (jpoint(i),i=1,nwfix)
+#if defined (SUN4)
+	      call fiswap(nwfix,jpoint,jpoint)	! swap for SUN only
+#endif
+	      ipoint=1
+	      do i=1,nwfix/2
+	        iii=2*i
+	        ii=iii-1
+	        if(jpoint(ii).ne.0) then
+	          nrect=nrect+1
+	          iprec(i)=jpoint(ii)
+	          ipanf(i)=jpoint(iii)
+	          if(i.gt.1) then
+	            if(iprec(i).eq.iprec(i-1).and.ipanf(i).eq.ipanf(i-1)) 
+     &	              then
+c		      ichk=20
+	              if(ichi.ge.0) write(*,*) 'Warning: 2 pointer identical:',
+     &	              i-1,iprec(i-1),ipanf(i-1),i,iprec(i),ipanf(i)
+	            endif
+	          endif
+	        endif
+	      enddo
+	      if(icp.eq.1) then
+	        ichc=ichi
+	        call check_pointer(ibfix,jpoint,nwfix,irec,nrec,ichc)
+	      endif
+	    else
+	      ichk=-1	    
+	      icha=ichi
+	      call abszeit(0,iftim,iyear,iday,ih,im,is,icha)
+	      call sub_datum(0,iday,iyear,mon,itag)
+	      if(ichi.ge.0) write(*,99) 'Warning: No pointer record available
+     * after ',itag,mon,iyear,ih,im,is
+99	      format(1x,a,i4,1h/,i2,1h/,2i4,2(1h:,i2))
+	      ipoint=0
+	      inanf=ndat+2
+	      nndat=ibfix(inanf)
+	      iprec(1)=1
+	      ipanf(1)=2
+	      iprec(2)=1
+	      ipanf(2)=inanf
+	      irec=1
+	      inrec=irec
+	      nlast=1
+	      mrec=2
+	    endif
+	  else
+	    ichk=-2
+	    if(ichi.ge.0) write(*,*) 'Warning: No Header found',(ibfix(i),i=1,5)
+	    icha=ichi
+	    call abszeit(0,last,iyear,iday,ih,im,is,icha)
+	    call sub_datum(0,iday,iyear,mon,itag)
+	    if(ichi.ge.0) write(*,'(1x,a,i4,1h/,i2,1h/,2i4,2(1h:,i2))') 
+     &	    'Last correct time:',itag,mon,iyear,ih,im,is
+	  endif
+	else
+c
+c---Lesen normalen Record
+c
+	  if(ipoint.eq.1.or.nrec.lt.mrec) then
+	    irec=iprec(nrec)
+	    ianf=ipanf(nrec)
+	    if(irec.eq.ilast) then
+	      iread=0
+	    else
+	      iread=1
+	    endif
+	    if(iread.eq.1) then
+	      read(idsc,rec=irec,err=880) (ibfix(i),i=1,nwfix)
+#if defined (SUN4)
+	      call fiswap(nwfix,ibfix,ibfix)	! swap for SUN only
+#endif
+	      if(icp.eq.1) then
+	        ichc=ichi
+	        call check_pointer(ibfix,jpoint,nwfix,irec,nrec,ichc)
+	      endif
+	      ilast=irec
+	    endif
+	    ndat=ibfix(ianf)
+	    icn=ianf-1
+	    do j=1,ndat
+	      icn=icn+1
+	      if(icn.gt.nwfix) then
+	        irec=irec+1
+	        read(idsc,rec=irec,err=880) (ibfix(i),i=1,nwfix)
+#if defined (SUN4)
+	        call fiswap(nwfix,ibfix,ibfix)	! swap for SUN only
+#endif
+	      if(icp.eq.1) then
+	        ichc=ichi
+	        call check_pointer(ibfix,jpoint,nwfix,irec,nrec,ichc)
+	      endif
+	        ilast=irec
+	        icn=2
+	      endif
+	      ibuf(j)=ibfix(icn)
+	    enddo
+	    iyr=ibuf(2)
+	    idy=ibuf(3)
+	    itm=ibuf(4)
+	    iftim=ltime(iyr,idy,itm,icht)
+	    iltim=2
+            if(icht.ne.0) goto 880
+	  else
+c
+c   Lesen ohne Pointer record
+c
+	    irec=inrec
+	    ndf=nrec-nlast-1
+	    if(ndf.gt.0) then
+	      do n=1,ndf
+	        ianf=inanf
+	        ndat=nndat
+	        idnext=ndat-(nwfix-ianf)
+	        if(idnext.le.0) then
+	          inanf=ianf+ndat
+	        else
+	          nskp=idnext/(nwfix-1)
+	          irec=irec+nskp+1
+	          inanf=idnext-nskp*(nwfix-1)+1
+	          if(inanf.le.1) then
+	            irec=irec-1
+	            inanf=nwfix
+	          endif
+	          read(idsc,rec=irec,err=880) (ibfix(i),i=1,nwfix)
+#if defined (SUN4)
+	          call fiswap(nwfix,ibfix,ibfix)	! swap for SUN only
+#endif
+	        endif
+	        mrec=mrec+1
+	        iprec(mrec)=irec
+	        ipanf(mrec)=inanf
+	        nndat=ibfix(inanf)
+	        if(nndat.le.0.or.nndat.gt.3840) then
+	          ichk=4
+	          return
+	        endif
+	      enddo
+	    endif
+c
+	    ianf=inanf
+	    ndat=ibfix(ianf)
+	    icn=ianf-1
+	    do j=1,ndat
+	      icn=icn+1
+	      if(icn.gt.nwfix) then
+	        irec=irec+1
+	        read(idsc,rec=irec,err=880) (ibfix(i),i=1,nwfix)
+#if defined (SUN4)
+	        call fiswap(nwfix,ibfix,ibfix)	! swap for SUN only
+#endif
+	        ilast=irec
+	        icn=2
+	      endif
+	      ibuf(j)=ibfix(icn)
+	    enddo
+	    inanf=icn+1
+	    if(inanf.gt.nwfix) then
+	      irec=irec+1
+	      read(idsc,rec=irec,err=880) (ibfix(i),i=1,nwfix)
+#if defined (SUN4)
+	      call fiswap(nwfix,ibfix,ibfix)	! swap for SUN only
+#endif
+	      ilast=irec
+	      icn=2
+	      inanf=2
+	    endif
+	    nndat=ibfix(inanf)
+	    if(nndat.le.0) then
+	      nrect=nrec
+	    endif
+	    inrec=irec
+	    nlast=nrec
+	    mrec=nrec+1
+	    iprec(mrec)=irec
+	    ipanf(mrec)=inanf
+	    iyr=ibuf(2)
+	    idy=ibuf(3)
+	    itm=ibuf(4)
+	    iftim=ltime(iyr,idy,itm,icht)
+	    iltim=3
+	    if(icht.ne.0) goto 880
+	  endif
+	endif
+c
+	last=iftim
+c   pointer check error
+	if(icp.eq.1.and.ichc.ne.0) ichk=-3
+	return
+c
+880	ichk=4
+	iftim=0
+	if(ichi.ge.0) then
+            write(*,*) 'Read error in rec',iltim,nrec,irec,ianf,ilast,
+     &      ipoint,mrec,nlast,inrec,inanf
+	    icha=ichi
+	    call abszeit(0,last,iyear,iday,ih,im,is,icha)
+	    call sub_datum(0,iday,iyear,mon,itag)
+	    write(*,'(1x,a,i4,1h/,i2,1h/,2i4,2(1h:,i2))') 'Last correct time:',
+     &	    itag,mon,iyear,ih,im,is
+	endif
+	return
+c
+	end
+	subroutine check_pointer(ibfix,jpoint,nwfix,irec,nrec,ichk)
+c
+c   CHECK_POINTER verifies the values of the pointer records by comparing
+c   them with actual ones determined while reading
+c
+c   Parameter:
+c     ibfix  - data buffer containing a physical record (ip)
+c     jpoint - read pointer array (ip)
+c     nwfix  - fixed lenght of physical record (ip)
+c     irec   - no of physical record in data file (ip)
+c     ichk   - error status (iop)
+c              ip: neg. - no error or warning on sys$output
+c              op: 0 - normal; 1 - pointer check error
+c
+	integer*2 ibfix(1),jpoint(1),ipoint(1024)
+c 
+	if(irec.eq.1) then
+	  mrec=0
+	  npoint=0
+	  n=-1
+	  ndat=0
+	  iend=0
+	  do i=1,nwfix
+	    ipoint(i)=0
+	  enddo
+	endif
+c
+	do j=2,nwfix
+	  n=n+1
+	  if(n.eq.ndat) then
+	    mrec=mrec+1
+	    ianf=j
+	    ndat=ibfix(ianf)
+	    irecp=jpoint(2*mrec-1)
+	    ianfp=jpoint(2*mrec)
+	    if(nrec.gt.mrec+1) then
+	      mrec=nrec+1
+	      irecp=irec
+	      ianfp=ianf
+	    endif
+	    if(ndat.eq.0) then
+	      iend=1
+	      return
+	    endif
+	    if(irec.ne.irecp.or.ianf.ne.ianfp) then
+	      ndatk=ibfix(ianfp)
+	      if(ichk.ge.0) write(*,*) 'Pointer check error',mrec,irec,ianf,ndat,
+     &	      irecp,ianfp,ndatk
+	      ichk=1
+	    endif
+	    npoint=npoint+1
+	    ipoint(npoint)=irec
+	    npoint=npoint+1
+	    ipoint(npoint)=ianf
+	    n=0
+	  endif
+	enddo
+c
+	return
+	end
+	function ltime(iyear,iday,itsec,ichk)
+c
+c   LTIME converts year, day of year and 10-sec of day into absolute 10-sec 
+c   time since 1.1.1970
+c
+c   Parameter:
+c     ltime - abs. time in 10-sec since 1.1.1970 (op)
+c     iyear - full year (e.g. 1989) (ip)
+c     iday  - day of year (ip)
+c     itsec - 10-sec time of day (ip)
+c     ichk  - error status (iop)
+c             0 - normal
+c             1 - input data out of range
+c
+	data nerr/0/
+c
+	ichi=ichk
+	ichk=0
+	if(iyear.lt.1970.or.iyear.gt.2000.or.iday.lt.1.or.iday.gt.366
+     &	.or.itsec.lt.0.or.itsec.gt.8640) then
+	  ichk=1
+	  if(ichi.ge.0) write(*,*) 'LTIME: wrong input time',itsec,iday,iyear
+	  nerr=nerr+1
+	  if(nerr.eq.10) stop 'LFTIME'
+	  return
+	endif
+	ltime=(iyear-1970)*3153600+((iyear-1969)/4)*8640
+	ltime=ltime+(iday-1)*8640+itsec
+	nerr=0
+c
+	return
+	end
+	subroutine abszeit(ind,itime,iyear,iday,ih,im,is,ichk)
+c
+c   ABSZEIT converts dd/mm/yyyy hh:mm:ss times into absolute 10-sec times 
+c   since 1.1.1970 and viceversa
+c
+c   ind  - (ip)
+c          0 :  year, day of year, 10-sec of day into abs. time
+c          1 :  abs. time into year, day of year, 10-sec of day
+c   ichk - error status (iop)
+c          0 - normal
+c          1 - input data out of range
+c
+	ichi=ichk
+	ichk=0
+c
+c   0 :  year, day of year, 10-sec of day into abs. time
+c
+	if(ind.eq.1) goto 100
+	iyear=itime/3153600+1970
+10	isecyr=(iyear-1970)*3153600+((iyear-1969)/4)*8640
+	if(isecyr.gt.itime) then
+	  iyear=iyear-1
+	  goto 10
+	endif
+	iday=(itime-isecyr)/8640+1
+	isecdy=(iday-1)*8640
+	ih=(itime-isecyr-isecdy)/360
+	im=(itime-isecyr-isecdy-ih*360)/6
+	is=(itime-isecyr-isecdy-ih*360-im*6)*10
+	return
+c
+c   1 :  abs. time into year, day of year, 10-sec of day
+c
+100	itsec=ih*360+im*6+is/10
+	if(iyear.lt.1970.or.iyear.gt.2000.or.iday.lt.1.or.iday.gt.366
+     &	.or.itsec.lt.0.or.itsec.gt.8640) then
+	  ichk=1
+	  if(ichi.ge.0) write(*,*) 'ABSZEIT: wrong input time',itsec,iday,iyear
+	  nerr=nerr+1
+	  if(nerr.eq.10) stop 'ABSZEIT'
+	  return
+	endif
+	itime=(iyear-1970)*3153600+((iyear-1969)/4)*8640
+	itime=itime+(iday-1)*8640+itsec
+	return
+c
+	end
+	subroutine sub_datum(mode,lftag,iyear,monat,itag)
+c
+c   DATUM converts day of year into month and day and viceversa
+c
+c     Mode = 0 conversion lftag into itag, monat
+c     Mode = 1 conversion itag, monat into lftag
+c
+	dimension mo(12)
+	data mo/31,28,31,30,31,30,31,31,30,31,30,31/
+c
+	msum=0
+	mo(2)=28
+	if(mod(iyear,4).eq.0) mo(2)=29
+	if(mode.eq.0) then
+	  do k=1,12
+	    msum=msum+mo(k)
+	    if(msum.ge.lftag) goto 5
+	  enddo
+5	  monat=k
+	  msum=msum-mo(k)
+	  itag=lftag-msum
+	else
+	  do k=1,monat-1
+	    msum=msum+mo(k)
+	  enddo
+	  lftag=msum+itag
+	endif
+c
+	return
+	end
+	SUBROUTINE RCOMP(IBUF,NWORDS,NSPUR,LHEAD,NSAMP,ICHK)
+C
+C********************************************************************
+C
+C	THIS ROUTINE RECONSTITUTES THE DATA THAT WERE REDUCED BY THE
+C	GRF PROGRAM DCOMP. THE DATA ARE FLAGGED BY A NEGATIVE NUMBER
+C	IN THE DATA BUFFER 5 (IBUF(5) = NUMBER OF WRITE ATTEMPTS).
+C
+C	AFTER A REDUCED DATA BLOCK HAS BEEN READ IN, THE DATA CAN 
+C	BE RECONSTITUTED SHOULD THIS BE NECESSARY BY CALLING
+C
+C		IF(IBUF(5).LT.0) CALL RCOMP(NWORDS,NSPUR,NSAMP)
+C
+C	WHERE THE DATA BLOCK (MAXIMUM LENGTH 3840 WORDS) IS IN THE
+C	UNLABELED COMMON ARRAY IBUF(3840),
+C
+C		NWORDS = THE NUMBER OF CURRENTLY RELEVANT WORDS IN
+C			 THE BUFFER IBUF (ip)
+c               ibuf   = data buffer (iop)
+C		NSPUR  = THE NUMBER OF CHANNELS RECORDED (ip)
+C               lhead  = lenght of blockheader (ip)
+C		NSAMP  = THE NUMBER OF SAMPLES/CHANNEL (200) (ip)
+c               ichk   = error status (iop)
+c                        ip: neg. - no error or warning on sys$output
+c                        op: 0 - normal
+c                           11 - too many traces
+c                           12 - data overflow 1
+c                           13 - too many data per channel
+c                           14 - data overflow 2
+c                           99 - compression error recovered (information only)
+c                                (not transfered in the moment)
+C
+C	THE RECONSTITUTED DATA WILL BE RETURNED TO THE CALLING 
+C	PROGRAM IN THE ORIGINAL BUFFER IBUF AND THE LENGTH OF
+C	RELEVANT DATA WILL BE GIVEN BY NSPUR*NSAMP+lhead.
+C
+C     ***************************************************************
+      INTEGER*2 IBUF,JDAT,ITEMP,ITEM1,ITEM2,IVOR
+      DIMENSION JDAT(3840),IBUF(*)
+      LOGICAL FLAG
+c
+	ichi=ichk
+	ichk=0
+C
+c---Nullsetzen Scratch-Buffer
+      DO 9 M = 1,NWORDS
+9     JDAT(M) = 0
+c---Umspeichern
+      DO 10 M = 1,NWORDS
+10    JDAT(M) = IBUF(M)
+c---Anfangswerte
+      ILEN = LHEAD + NSPUR*NSAMP
+      MSPUR = 1
+      MSAMP = O
+      FLAG = .FALSE.
+      ichk=0
+c---Beginn Hauptschleife 100
+      DO 100 ii = LHEAD+1,NWORDS
+      IF (MSAMP .LT. NSAMP) GO TO 20
+      FLAG = .FALSE.
+      MSAMP = 0
+      MSPUR = MSPUR + 1
+	if(mspur.gt.nspur) then
+	  ichk = 11
+	  if(ichi.ge.0) write(*,*) ' Zu viele Spuren:',mspur,(ibuf(i),i=3,4)
+	  goto 999
+	endif
+20    CONTINUE
+c---Abfrage auf 0e (Beginn einer Komprimiersequenz) sonst Kopieren des Wertes
+      IF (FLAG) GO TO 200
+c	write(*,'(a,3z6)') 'flag',flag,JDAT(ii),IAND(JDAT(ii),15)
+      IF (IAND(JDAT(ii),15) .EQ. 14) GO TO 200
+c--Unkomprimierte Daten
+      M = LHEAD + MSPUR + MSAMP*NSPUR
+	if(m.gt.ilen) then
+	  ichk = 12
+	  if(ichi.ge.0) write(*,*) ' Daten-Ueberlauf',m,mspur,msamp,(ibuf(i),i=3,4)
+	  goto 999
+	endif
+      IBUF(M) = JDAT(ii)
+c---Zwischenspeichern des letzten Wertes beim Kopieren
+      ITEMP = IBUF(M)
+      MSAMP = MSAMP + 1
+	if(msamp.gt.nsamp) then
+	  ichk = 13
+	  if(ichi.ge.0) write(*,*) ' Msamp groesser 200:',msamp,mspur,(ibuf(i),
+     &	  i=3,4)
+	  goto 999
+	endif
+	goto 80
+c
+c---Behandlung der Komprimiersequenz
+c
+200   CONTINUE
+c---Extraktion des Komprimierzaehlers
+      IF (FLAG) GO TO 210
+      NDAT = IAND(JDAT(ii),'7f00'x)/256
+      FLAG = .TRUE.
+c---Abfrage auf 1e (Spur konstant => ix=0)
+      IF (IAND(JDAT(ii),'1e'x) .EQ. INT('1e'x)) GO TO 250
+      GO TO 80
+210   CONTINUE
+c---Extraction des vorderen Bytes und Schieben um 4 Bits
+      ITEM1 = IAND(JDAT(ii),'ff00'x)
+	item1=item1/16
+c	type '(1x,z4)',item1
+c---Extraktion des Vorzeichens der Differenz
+      IVOR = 0
+      IF (IAND(JDAT(ii),'80'x) .EQ. INT('80'x)) IVOR = 'f000'x
+c---Extraction des hinteren Bytes und Schieben um 4 Bits
+      ITEM2 = IAND(JDAT(ii),'ff'x)*16
+      ITEM2 = IOR(ITEM2,IVOR)
+c---Berechnung des ersten Originalwertes
+      M = LHEAD + MSPUR + MSAMP*NSPUR
+	if(msamp.eq.0) then
+	  if(ichi.ge.0) write(*,*) ' Komprimierfehler: Letzter Wert von Spur',
+     &    mspur-1,' fehlt',(ibuf(i),i=3,4)
+	  ml=lhead+(mspur-1)+(nsamp-1)*nspur
+	  mll=ml-nspur
+	  ibuf(ml)=ibuf(mll)
+	  ibuf(m)=itemp
+	  msamp=1
+	  m=lhead+mspur+msamp*nspur
+c	  ichk = 99
+	endif
+	if(msamp.gt.nsamp) then
+	  ichk = 13
+	  if(ichi.ge.0) write(*,*) ' Msamp groesser 200:',msamp,mspur,(ibuf(i),
+     &	  i=3,4)
+	  goto 999
+	endif
+	if(m.gt.ilen) then
+	  ichk = 12
+	  if(ichi.ge.0) write(*,*) ' Daten-Ueberlauf',m,mspur,msamp,(ibuf(i),i=3,4)
+	  goto 999
+	endif
+      IBUF(M) = ITEM1 + ITEMP
+      ITEMP = IBUF(M)
+c---Berechnung des zweiten Originalwertes
+      MSAMP = MSAMP + 1
+	if(msamp.gt.nsamp) then
+	  ichk = 13
+	  if(ichi.ge.0) write(*,*) ' Msamp groesser 200:',msamp,mspur,(ibuf(i),
+     &	  i=3,4)
+	  goto 999
+	endif
+      M = LHEAD + MSPUR + MSAMP*NSPUR
+	if(m.gt.ilen) then
+	  ichk = 12
+	  if(ichi.ge.0) write(*,*) ' Daten-Ueberlauf',m,mspur,msamp,(ibuf(i),i=3,4)
+	  goto 999
+	endif
+      IBUF(M) = ITEMP + ITEM2
+      ITEMP = IBUF(M)
+      MSAMP = MSAMP + 1
+	if(msamp.gt.nsamp) then
+	  ichk = 13
+	  if(ichi.ge.0) write(*,*) ' Msamp groesser 200:',msamp,mspur,(ibuf(i),
+     &    i=3,4)
+	  goto 999
+	endif
+c---Zaehler auf 0 ?
+      NDAT = NDAT - 1
+      IF (NDAT .LE. 0) FLAG = .FALSE.
+      GO TO 80
+c
+c---'1e'-Option - Konstante Spur
+c
+250   CONTINUE
+c      TYPE 887, NDAT,JDAT(ii),ii
+      ISAVE = MSAMP
+c887   FORMAT(' 1E-Option:',I8,z4,I8)
+      DO 260 N = 1,NDAT
+      M = LHEAD + MSPUR + MSAMP*NSPUR
+C     TYPE 887 NDAT,M
+      IF (M .GT. ILEN) THEN
+	  ichk = 14
+	  if(ichi.ge.0) write(*,889) MSPUR,MSAMP,M,LHEAD,NSPUR
+CNIK        MSAMP = ISAVE + 2*NDAT
+CNIK        GO TO 260
+	  goto 999
+      ENDIF
+889   FORMAT('***  BIG PROBLEM -- OVERFLOW ***',3I6)
+C     TYPE 888, MSPUR,MSAMP,M,IA(3)
+      IBUF(M) = ITEMP
+      MSAMP = MSAMP + 1
+      M = LHEAD + MSPUR + MSAMP*NSPUR
+C     WRITE(1,887) NDAT,M
+      IF (M .GT. ILEN) THEN
+	  ichk = 14
+	  if(ichi.ge.0) write(*,889) MSPUR,MSAMP,M
+CNIK        MSAMP = ISAVE + 2*NDAT
+CNIK        GO TO 260
+	  goto 999
+      ENDIF
+      IBUF(M) = ITEMP
+      MSAMP = MSAMP + 1
+260   CONTINUE
+c	
+      FLAG = .FALSE.
+c---Ende Schleife 100
+80    CONTINUE
+100   CONTINUE
+      if(lhead.gt.5) IBUF(5) = IABS(INT(IBUF(5)))
+999   continue
+      RETURN
+      END
+	SUBROUTINE RESAM(NDAT,NCH,I0,IDT,IBUF1,IBUF2)
+c
+c   RESAM resamples 16-bit data words written in GRF code by a factor of IDT
+c   (uncompressed)
+c
+c   Parameter:
+c     ndat  - no of data per channel (ip)
+c     nch   - no of channels (ip)
+c     i0    - lenght of blockheader (ip)
+c     idt   - reduction dactor (ip)
+c     ibuf1 - input buffer (ip)
+c     ibuf2 - output buffer (op)
+c
+c
+	IMPLICIT INTEGER*2 (I-N)
+	DIMENSION IBUF1(1),IBUF2(1),IEND(19),ISD(2)
+	INTEGER*4 ISUM,MANT2,MFFF0,ior,iand
+	EQUIVALENCE (ISD(1),ISUM)
+	DATA MFFF0/177760/
+C
+	DO 100 K=1,NCH
+	L=0
+	DO 30 J=1,NDAT,IDT
+	ISUM=0
+	MEXP=12
+	DO 20 I=1,IDT
+	IX=(J+I-2)*NCH+I0+K
+	IDAT=IBUF1(IX)
+c	IEXP=IDAT.AND.15
+	IEXP=iand(IDAT,15)
+	IF(IEXP.LT.13.AND.IEXP.GT.0) GOTO 10
+	IF(J.EQ.1) IDAT=IEND(K)
+	IF(J.GT.1) IDAT=IBUF1(IY)
+c	IEXP=IDAT.AND.15
+	IEXP=iand(IDAT,15)
+10	IF(IEXP.LT.MEXP) MEXP=IEXP
+c	MANT2=IDAT.AND.MFFF0
+	MANT2=iand(IDAT,MFFF0)
+	ISFT=12-IEXP
+	IF(ISFT.gt.0) then
+	  MANT2=ISHFT(MANT2,ISFT)
+	elseif(isft.lt.0) then
+	  mant2=0
+	endif
+	ISUM=ISUM+MANT2
+20	CONTINUE
+	ISUM=ISUM/IDT
+	ISFT=MEXP-12
+	IF(ISFT.NE.0) ISUM=ISHFT(ISUM,ISFT)
+	MANT=ISD(1)
+c	MANT=MANT.AND.MFFF0
+	MANT=iand(MANT,MFFF0)
+	L=L+1
+	IY=(L-1)*NCH+K
+c	IBUF2(IY)=MANT.OR.MEXP
+	IBUF2(IY)=ior(MANT,MEXP)
+30	CONTINUE
+	IEND(K)=IBUF2(IY)
+100	CONTINUE
+C
+	RETURN
+	END
+        function first_time(idsc,ddir,ihead,ndat,ichk)
+c
+c   First_time reads first file in data volume and returns the first time
+c   found and the tape header
+c
+c   Parameters:
+c     first_time - first found time in volume in 10-sec since 1.1.1970 (ip)
+c     idsc  - input unit (ip)
+c     ddir  - data directory (ip)
+c     ihead - output buffer for tape header (op)
+c     ndat  - length of first data record in data file (op)
+c     ichk  - error status (iop)
+c             ip: neg. - no error or warning on sys$output
+c             op: -3 - warning: pointer check error
+c                 -2 - warning: no header found
+c                 -1 - warning: no pointer record found - sequential read done
+c                  0 - normal
+c                  1 - directory not found or first file empty
+c                  2 - EOV
+c                  4 - read error
+c
+        integer first_time
+        integer*2 ihead(*)
+        character ffile*132,ddir*(*)
+c
+        ichi=ichk
+        ichk=0
+        ichn=ichi
+        ichn=next_grffile(0,ddir,ffile,nfrec)
+	write(*,*) 'next_grffile found: ',ffile
+		nfrec=360
+        if(ichn.le.0) then
+          open(idsc,name=ffile,status='old',form='unformatted',
+     &    access='direct',recl=2048,err=888)
+c     &	  access='direct',recl=512,err=888)
+          ichr=ichi
+          call rdfix(idsc,1024,nfrec,1,ndat,iotim,ihead,0,ichr)
+          ichk=ichr
+          close(idsc)
+          first_time=iotim
+        else
+888       if(ichn.eq.3) then
+            ichk=1
+          else
+            ichk=2
+          endif
+          first_time=-1
+        endif
+c         
+        return
+        end
+	function change_i4(value)
+c
+c   Converts 16-bit GRF data words into 32-bit integer
+c
+	implicit integer(a-z)
+	integer*2 value
+c
+	value_i4=value
+	iexp=iand(value_i4,15)
+	move_bits=8-iexp
+	if(move_bits.lt.0) then
+	  fac=2**-move_bits
+	  change_i4=value_i4/fac
+	  if(change_i4.lt.0) change_i4=change_i4-1
+	else
+	  fac=2**move_bits
+	  change_i4=value_i4*fac
+	endif
+c
+	return
+	end

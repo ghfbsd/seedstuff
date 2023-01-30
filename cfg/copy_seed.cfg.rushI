@@ -1,0 +1,263 @@
+#       copy_seed Configuration File
+#
+#	GEOFON Network & GRSN Network
+#	Latest modification: ISP 19-Dec-1996
+#		LVC,JER,EIL 12-Feb-1997
+#		SNAA, RUE 24-Apr-1997
+#		MTE 18-Nov-1997
+#		CART 26-Jan-1998
+#               PUL 20-Oct-1998
+#               DAG, MRNI 1-Dec-1998
+#
+#       Abbreviation Dictionaries
+#
+# Format_abbr: Abbreviation dictionary for formats of data records
+# Parameter: 1 - format identifier code, 2 - format name, 3 - family type, 
+# 4 - ddl keys 
+# Here: DDL description of Steim-1 data compression scheme
+# (see SEED Manual Vers.2.3, pp 151)
+#
+Format_abbr> 1 Steim_Integer_Compression_Format 50 ->
+	-> F1_P4_W4_D0-31_C2_R1_P8_W4_D0-31_C2 ->
+	-> P0_W4_N15_S2,0,1 ->
+	-> T0_X_N0_W4_D0-31_C2 ->
+	-> T1_N0_W1_D0-7_C2_N1_W1_D0-7_C2_N2_W1_D0-7_C2_N3_W1_D0-7_C2 ->
+	-> T2_N0_W2_D0-15_C2_N1_W2_D0-15_C2 ->
+	-> T3_N0_W4_D0-31_C2
+#        
+# Inst_abbr: Abbreviation dictionary for seismometers
+# Parameter: 1 - instrument lookup code, 2 - seismometer type
+#
+Inst_abbr> 1 Streckeisen_STS-1V/VBB_Seismometer
+Inst_abbr> 2 Streckeisen_STS-1H/VBB_Seismometer
+Inst_abbr> 3 Streckeisen_STS-2_Seismometer
+Inst_abbr> 4 Streckeisen_STS-1V_Seismometer
+Inst_abbr> 5 Streckeisen_STS-1H_Seismometer
+Inst_abbr> 6 Guralp_CMG-3T_seismometer
+#
+# Unit_abbr: Abbreviation dictionary for used units
+# Parameters: 1 - unit lookup code, 2 - unit name, 3 - unit description
+#
+Unit_abbr> 1 COUNTS Digital_Counts
+Unit_abbr> 2 COUNTS/V Counts_per_Volt
+Unit_abbr> 3 M/S Velocity_in_Meters_per_Second
+Unit_abbr> 4 V Volts
+Unit_abbr> 5 A Amperes
+#
+# Comment: Comment dictionary
+# Parameters: 1 - comment lookup code, 2 - comment
+#
+Comment> 1 S Time_correction_does_not_include_leap_second,_(-1000ms)
+Comment> 2 S Tunnel_site:_N-S/E-W_alignment_+/-3_deg.,_aligned_geometrically
+Comment> 3 S Timing_by_internal_clock_only,_time_only_approximate
+Comment> 4 S Instrument_not_oriented_N/S-E/W
+Comment> 5 S Wrong_date_set_during_test,_should_be_1999/9/22-24
+Comment> 6 S Data_logger_replaced,_old_S/N_0301,_new_S/N_0330
+Comment> 7 S Spiking_in_data
+#
+#       Response Dictionaries
+#
+# Analog stages (seismometer & analog filters): Poles & zeros representation (PAZ)
+# Parameters: 1 - response lookup key, 2 - response name, 3 - no of zeros,
+#   4 - no of poles, 5 - norm. factor, 6 - norm. freq., 7 - stage gain,
+#   8 - gain freq., 9 - input units key, 10 - output units key,
+#  11 - zeros, 12 - poles
+#
+#   GRF PAZ response
+Resp_paz> 1 GRF-PAZ 2 9 3.0202814e10 1.0 3.0202814e10 1.0 3 4 ->
+	-> (0.0,0.0) (0.0,0.0) ->
+	-> (-31.416,0.0) (-0.222,0.222) (-0.222,-0.222) (-7.006,30.625) (-7.006,-30.625) ->
+	-> (-19.572,24.574) (-19.572,-24.574) (-28.306,13.629) (-28.306,-13.629)
+#   STS-1/VBB PAZ response
+Resp_paz> 2 STS-1/VBB-PAZ 2 4 3948.58 0.02 2400.0 0.02 3 4 ->
+	-> (0.0,0.0) (0.0,0.0) ->
+	-> (-0.01234,0.01234) (-0.01234,-0.01234) (-39.18,49.12) (-39.18,-49.12)
+#   STS-2 PAZ response
+Resp_paz> 3 STS-PAZ 2 5 6.0077E+07 0.02 1500.0 0.02 3 4 ->
+	-> (0.0,0.0) (0.0,0.0) ->
+	-> (-0.037004,-0.037016) (-0.037004,0.037016) (-251.33,0.0) ->
+	-> (-131.04,-467.29) (-131.04,467.29)
+#   CMG-3T PAZ response
+Resp_paz> 4 CMG-3T-PAZ 2 2 1.0 0.04 1500.0 0.04 3 4 ->
+	-> (0.0,0.0) (0.0,0.0) ->
+	-> (-0.04442,-0.04442) (-0.04442,0.04442)
+#
+# Digitizer stage: coefficients representation
+# Parameters: 1 - response lookup key, 2 - response name, 3 - input units key (V),
+#   4 - output units key (counts), 5 - sampling rate, 6 - gain, 7 - gain freq
+#   Q680 digitizer
+Resp_digit> 1 Q680DIGI 4 1 5120.0 400000.0 0.0
+Resp_digit> 2 Q52KDIGI 4 1 1280.0 400000.0 0.0
+Resp_digit> 3 Reftek72A/02 4 1 1000.0 400000.0 0.0
+#
+# FIR filter stages: coefficients representation
+# Parameters: 1 - response lookup key, 2 - response name (file name for coeff.),
+#   3 - no of numer., 4 - no of denom., 5 - input units key (c), 6 - outp. units key (c),
+#   7 - input sampling rate, 8 - decim. factor, 9 - decim. delay,
+#  10 - appl. correction, 11 - gain, 12 - gain freq
+#   Decimation 5120 -> 320 Hz (Q680 - DSP)
+Resp_coeff> 1 Deci16 64 0 1 1 5120.0 16 0.006 0.0 1.0 0.0
+#   Decimation 320 -> 80 Hz (Q680 - DSP)
+Resp_coeff> 2 Deci4.1 72 0 1 1 320.0 4 0.077 0.0 1.0 0.0
+#   Decimation 80 -> 40 Hz (Q680 - DSP)
+Resp_coeff> 3 Deci2 64 0 1 1 80.0 2 0.379 0.0 1.0 0.0
+#   Decimation 40 -> 20 Hz (Q680 - DSP)
+Resp_coeff> 4 Deci2 64 0 1 1 40.0 2 0.76 0.0 1.0 0.0
+#   Decimation 20 -> 10 Hz (Q680 - DSP)
+Resp_coeff> 5 Deci2 64 0 1 1 20.0 2 1.52 0.0 1.0 0.0
+#   Decimation 10 -> 1 Hz (Q680 - DSP)
+Resp_coeff> 6 Deci10.1 260 0 1 1 10.0 10 11.402 0.0 1.0 0.0
+#   Decimation 20 -> 5 Hz (Q680/Q52K - DA) 
+Resp_coeff> 7 Deci4.2 50 0 1 1 20.0 4 2.875 0.0 1.0 0.0
+#   Decimation 5 -> 1 Hz (Q680/Q52K - DA)
+Resp_coeff> 8 Deci5 200 0 1 1 5.0 5 20.0 0.0 4.0 0.0
+#   Decimation 1 -> 10 s (Q680/Q52K - DA)
+Resp_coeff> 9 Deci10.2 400 0 1 1 1.0 10 200.0 222.88 4.0 0.0
+#   Decimation 1280 -> 160 Hz (Q52K - DSP)
+Resp_coeff> 10 Deci8.1 24 0 1 1 1280.0 8 0.0089844 0.0 1.0 0.0
+#   Decimation 160 -> 20 Hz (Q52K - DSP)
+Resp_coeff> 11 Deci8.2 128 0 1 1 160.0 8 0.39687 0.0 1.0 0.0
+#
+#       Network Description
+#
+#   Parameter: 1 - network abbr., 2 - FDSN network code, 3 - network name
+#       description <= 50 characters.
+#                         1         2         3         4         5
+#                12345678901234567890123456789012345678901234567890
+#
+#Network> GFN GE GEOFON_Program,_GFZ_Potsdam,_Germany
+Network> RUSH YY RUSH-Reflectors_Under_Scottish_Highlands_expt._UB/USC
+#
+#       Station & Channel Description
+#
+# Station descriptor: 1 - station code, 2 - station name, 3 - latitude,
+#   4 - longitude, 5 - elevation, 6 - start of validity year/date,
+#   7 - end of validity year/date
+#
+# Channel descriptor: 1 - channel ident, 2 - instr. key, 3 - input units key,
+#   4 - calib. units key, 5 - local depth, 6 - azimuth, 7 - dip,
+#   8 - format ident key,
+#   9 - sampling rate, 10 - max. clock drift, 11 - PAZ lookup key/gain,
+#  12 - digitizer lkp key/gain, 13 - FIR stages lkp keys, 14 - channel sensitivity,
+#  15 - sens. freq
+#
+# Check datalogger gain, channel sensitivity, sensitivity frequency.
+Station> 00273 RUSH_huddle_test,_datalogger_S/N_273 0 0 0 1990/001 0/0
+Station_comment> 3 1999/001 1999/365
+Station_comment> 4 1999/001 1999/365
+Station_comment> 5 1990/001 1999/365
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> 00301 RUSH_huddle_test,_datalogger_S/N_301 0 0 0 1990/001 0/0
+Station_comment> 3 1990/001 1999/365
+Station_comment> 4 1990/001 1999/365
+Station_comment> 5 1990/001 1999/365
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> 00323 RUSH_huddle_test,_datalogger_S/N_323 0 0 0 1990/001 0/0
+Station_comment> 3 1990/001 1999/365
+Station_comment> 4 1990/001 1999/365
+Station_comment> 5 1990/001 1999/365
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> 00328 RUSH_huddle_test,_datalogger_S/N_328 0 0 0 1990/001 0/0
+Station_comment> 3 1999/001 1999/365
+Station_comment> 4 1999/001 1999/365
+Station_comment> 5 1990/001 1999/365
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> 00330 RUSH_huddle_test,_datalogger_S/N_330 0 0 0 1990/001 0/0
+Station_comment> 3 1999/001 1999/365
+Station_comment> 4 1999/001 1999/365
+Station_comment> 5 1990/001 1999/365
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> 00331 RUSH_huddle_test,_datalogger_S/N_331 0 0 0 1990/001 0/0
+Station_comment> 3 1999/001 1999/365
+Station_comment> 4 1999/001 1999/365
+Station_comment> 5 1990/001 1999/365
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> 00333 RUSH_huddle_test,_datalogger_S/N_333 0 0 0 1990/001 0/0
+Station_comment> 3 1999/001 1999/365
+Station_comment> 4 1999/001 1999/365
+Station_comment> 5 1990/001 1999/365
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> 00336 RUSH_huddle_test,_datalogger_S/N_336 0 0 0 1990/001 0/0
+Station_comment> 3 1999/001 1999/365
+Station_comment> 4 1999/001 1999/365
+Station_comment> 5 1990/001 1999/365
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> HOYT Hoy_tunnel,_Orkney 58.82618 -3.23917 150.0 1999/277 0/0
+Station_comment> 2 1999/277 2009/277
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> BOBR Bonar_Bridge,_Sutherland 57.91417 -4.32817 150.0 1999/280 0/0
+Station_comment> 3 1999/280 1999/331
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> BANN Bettyhill_Array_north_Newlands,_Sutherland 58.52184 -4.21374 90.0 1999/270 0/0
+Station_comment> 6 1999/336 0/0
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> BAWA Bettyhill_Array_west_Achnabourin,_Sutherland 58.50178 -4.21987 50.0 1999/273 0/0
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> BACA Bettyhill_Array_cairn/center,_Sutherland 58.50052 -4.20487 30.0 1999/274 0/0
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> BASS Bettyhill_Array_south_Skelpick,_Sutherland 58.48189 -4.20134 30.0 1999/271 0/0
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> BABE Bettyhill_Array_boggy_east,_Sutherland 58.50232 -4.16209 90.0 1999/278 0/0
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> ALTA Altnaharra,_Sutherland 58.28584 -4.41265 90.0 1999/278 0/0
+Station_comment> 7 2000/130 2000/154
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+Station> ROGR Rogart,_Sutherland 58.02506 -4.17346 90.0 1999/278 0/0
+Channel> BHZ 6 3 5 0.0 0.0 -90.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 6 3 5 0.0 0.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 6 3 5 0.0 90.0 0.0 1 10.0 0.02 4/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+#       Data Management Center
+#
+#DMC> GEOFON_Data_Center_Potsdam
+DMC> U._Bristol_Earth_Sciences
+#
+End

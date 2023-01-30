@@ -1,0 +1,24 @@
+DEBUG		=	-g
+MLOC		= 	../../mkconf
+include	$(MLOC)/Make.any.FLAGS
+
+DEST		= 	../../lib/$(OS)
+
+LIBRARY		= 	libC$(ARCH).a
+
+SRCS		= 	C_functions.c \
+			TapeRead-notape.c
+
+OBJS		=	$(DEST)/C_functions.o \
+			$(DEST)/TapeRead-notape.o
+
+
+$(DEST)/$(LIBRARY):	$(OBJS) 
+			ar cru $(DEST)/$(LIBRARY) $(OBJS)
+			ranlib $(DEST)/$(LIBRARY)
+		
+update:         	$(DEST)/$(LIBRARY)
+
+
+$(DEST)/%.o: %.c
+	$(CC) $(CFLAGS) $(DEBUG) -c $< $(OUTPUT_OPTION)

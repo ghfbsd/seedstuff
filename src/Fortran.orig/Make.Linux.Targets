@@ -1,0 +1,90 @@
+DEBUG		= -g
+MLOC		= ../../mkconf
+
+include	$(MLOC)/Make.$(OS).FLAGS
+
+MAKEFILE      = Make.$(ARCH).Targets
+
+OBJ	      = ../../lib/$(OS)
+BIN           = ../../bin/$(OS)
+SRC           = ../../src/Fortran
+
+CHECKLIBS     = \
+		../../lib/$(OS)/libF$(OS).a \
+		../../lib/$(OS)/libC$(OS).a \
+		../../lib/$(OS)/libT$(OS).a \
+              
+#LLIBS         = $(CHECKLIBS) $(LIBS) -lf2c -lm
+LLIBS         = $(CHECKLIBS) $(LIBS) -lm
+
+LINK          = $(CC) $(LDFLAGS)
+FLINK         = $(FC) $(LDFLAGS)
+
+CCUSED	      = $(CCFLAGS) $(DEBUG)
+FCUSED	      = $(FFLAGS) $(DEBUG)
+
+
+
+
+targets: \
+	$(BIN)/copy_seed \
+	$(BIN)/check_seed \
+	$(BIN)/check_qic \
+	$(BIN)/check_tape \
+	$(BIN)/check_file \
+	$(BIN)/extr_qic \
+	$(BIN)/extr_tape \
+	$(BIN)/extr_file \
+	$(BIN)/make_dlsv \
+	$(BIN)/make_qseed \
+	$(BIN)/swap_mseed \
+	$(BIN)/read_seed
+
+
+$(BIN)/copy_seed:	$(OBJ)/copy_seed.o $(CHECKLIBS)
+	$(FLINK) -o  $@ $< $(LLIBS)
+	
+$(BIN)/check_seed:	$(OBJ)/check_seed.o $(CHECKLIBS)
+	$(FLINK) -o  $@ $< $(LLIBS)
+
+$(BIN)/check_qic:	$(OBJ)/check_qic.o $(CHECKLIBS)
+	$(FLINK) -o  $@ $< $(LLIBS)
+
+$(BIN)/check_tape:	$(OBJ)/check_tape.o $(CHECKLIBS)
+	$(FLINK) -o  $@ $< $(LLIBS)
+
+$(BIN)/check_file:	$(OBJ)/check_file.o $(CHECKLIBS)
+	$(FLINK) -o  $@ $< $(LLIBS)
+
+$(BIN)/extr_qic:	$(OBJ)/extr_qic.o $(CHECKLIBS)
+	$(FLINK) -o  $@ $< $(LLIBS)
+
+$(BIN)/extr_tape:	$(OBJ)/extr_tape.o $(CHECKLIBS)
+	$(FLINK) -o  $@ $< $(LLIBS)
+
+$(BIN)/extr_file:	$(OBJ)/extr_file.o $(CHECKLIBS)
+	$(FLINK) -o  $@ $< $(LLIBS)
+
+$(BIN)/make_dlsv:	$(OBJ)/make_dlsv.o $(CHECKLIBS)
+	$(FLINK) -o  $@ $< $(LLIBS)
+
+$(BIN)/make_qseed:	$(OBJ)/make_qseed.o $(CHECKLIBS)
+	$(FLINK) -o  $@ $< $(LLIBS)
+
+$(BIN)/swap_mseed:	$(OBJ)/swap_mseed.o $(CHECKLIBS)
+	$(FLINK) -o  $@ $< $(LLIBS)
+
+$(BIN)/read_seed:	$(OBJ)/read_seed.o $(CHECKLIBS)
+	$(FLINK) -o  $@ $< $(LLIBS)
+
+$(OBJ)/%.o: %.F
+#$(OBJ)/%.o: %.c
+#	cp $< $(OBJ)/$*.tmp.h
+##	gcc -traditional -E $(CCFLAGS) $(OBJ)/$*.tmp.h > $(OBJ)/$*.tmp.F
+#	$(FC) -traditional -E $(CCUSED) $(OBJ)/$*.tmp.h > $(OBJ)/$*.tmp.F
+#	f2c -d$(OBJ) $(OBJ)/$*.tmp.F
+#	$(CC) $(CCUSED) -c $(OBJ)/$*.tmp.c -o $@
+	$(FC) $(FCUSED) -c $*.F -o $@
+
+$(OBJ)/%.o: %.f
+	$(FC) $(FCUSED) -c $*.f -o $@

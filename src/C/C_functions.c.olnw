@@ -1,0 +1,1167 @@
+/****************************************************************************
+BM         
+M* Module      : C_functions.c 
+ * 
+D* Description : Functions for Fortran to C call interface 
+ * 
+I* Import      :
+ *
+E* Export      : c_memcpy       - C memcpy function for FORTRAN interface
+E*               fill_block     - Save a read block 
+E*               c_str_upcase   - Upper all letter in a given string 
+ *
+P* Author      : W. Ruesing
+ *
+U* Updates     :
+EM 
+ ****************************************************************************/
+
+#include <stdio.h>
+#ifdef SUN4
+#	include <floatingpoint.h>
+#endif
+#include <memory.h>
+#include <ctype.h>
+#include <dirent.h>
+#include <search.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string.h>
+#if defined(LINUX)
+#include <stdlib.h>
+#include <time.h>
+#else
+#include <sys/time.h>
+#endif
+
+#ifdef VERBOSE
+	static char ar[255];
+	#define AV(a) AddVerbose((a))
+#else
+	#define AV(a) (a)
+#endif
+
+extern int	FileFind( );
+int dSaveTime;
+int iWildCardAll;
+int iLess,iGreater;
+
+#if defined(LINUX)
+#define c_str_upcase c_str_upcase__
+#define c_memcpy     c_memcpy__
+#define fill_block   fill_block__
+#define get_sfile    get_sfile__
+#define get_file     get_file__
+#define c_clock      c_clock__
+#define c_time       c_time__
+#endif
+#if defined (SUN4) || defined (SOLARIS)
+#define c_str_upcase c_str_upcase_
+#define c_memcpy     c_memcpy_
+#define fill_block   fill_block_
+#define get_sfile    get_sfile_
+#define get_file     get_file_
+#define c_clock      c_clock_
+#define c_time       c_time_
+#endif
+
+/* ======================================================================== */
+/*                               Prototypes                                 */
+/* ======================================================================== */
+extern int   c_str_upcase ( );
+extern void  c_memcpy     ( );
+/*extern short iswap        ( short* );*/
+extern void  fill_block   ( );
+extern void  get_sfile    ( );
+extern void  get_file     ( );
+extern int   c_time	  ( );
+   
+/* ======================================================================== */
+/* local functions                                                          */ 
+/* ======================================================================== */
+char        *StripBlank( );
+double      ExtractTime( );
+int         TestTime   ( );
+int	    IsInTime   ( );
+int	    IsLongName ( );
+int	    NextLowerTimeFile( );  		
+double 	    ToLongTime ( );
+double      ToLongDouble( );
+
+#ifdef VERBOSE
+char* AddVerbose( char* cpIn ) {
+	(void)strcpy(ar,cpIn);
+	(void)strcat(ar,"v");
+	return(ar);
+}
+#endif
+
+
+/* ======================================================================== */
+/*                      Module global defines                               */
+/* ======================================================================== */
+#define	TRUE		(1)
+#define	FALSE		(0)
+#define BUFLEN		(1024)
+#define STATLEN		(6)
+#define CHANLEN 	(4)
+#define NAMELEN		(1024)
+#define INIT		(-100)
+#define MODE_0		(100)
+#define MODE_1		(101)
+#define MODE_2		(102)
+
+#if defined (LINUX)
+#define ishft        ishft_
+/****************************************************************************
+BF
+F * Function    : ishft
+  *
+D * Description : bitwise shift left +/-n bits
+D *               
+  *
+C * Call        :
+  *
+P * Parameter   : int iToShift - integer to shift
+P *               int iBits    - number of bits to shift +n shift left
+P *                                                      +n shift right
+  *
+E * Error Code  :
+  *
+R * Return      : 
+EF
+ ****************************************************************************/
+  
+/* ======================================================================== */
+int	ishft( int* iToShift, int* iBits )
+/* ======================================================================== */
+{ 
+        if( *iBits == 0 ) { 
+                return((int)(*iToShift)); 
+        } else if( *iBits > 0 ) {                 
+                return( (int)(*iToShift << *iBits)); 
+        } else {                 
+                return( (int)(*iToShift >> abs(*iBits)));
+        }                 
+}
+ 
+#define iand        iand_
+/****************************************************************************
+BF
+F * Function    : iand
+  *
+D * Description : bitwise and function
+D *               
+  *
+C * Call        :
+  *
+P * Parameter   : 
+P *               
+P *                                                      
+  *
+E * Error Code  :
+  *
+R * Return      : 
+EF
+ ****************************************************************************/
+  
+/* ======================================================================== */
+int	iand( int* iToAnd, int* iMask )
+/* ======================================================================== */
+{ 
+	return( *iToAnd & *iMask );
+}
+ 
+#define ior        ior_
+/****************************************************************************
+BF
+F * Function    : ior
+  *
+D * Description : bitwise or function
+D *               
+  *
+C * Call        :
+  *
+P * Parameter   : 
+P *               
+P *                                                      
+  *
+E * Error Code  :
+  *
+R * Return      : 
+EF
+ ****************************************************************************/
+  
+/* ======================================================================== */
+int	ior( int* iToOr, int* iMask )
+/* ======================================================================== */
+{ 
+	return( *iToOr | *iMask );
+}
+
+#endif
+
+#if defined (NIX)
+/****************************************************************************
+BF
+F * Function    : c_clock
+  *
+D * Description : The clock() function returns an approximation of processor 
+D *               time used by the program.
+  * 
+C * Call        :             
+  *
+P * Parameter   :      
+  *
+E * Error Code  :
+  *
+R * Return      : The value returned is the CPU time in seconds used. 
+EF
+ ****************************************************************************/
+
+/* ======================================================================== */
+int	c_clock( void )
+/* ======================================================================== */
+{
+       return((int) (clock()/CLOCKS_PER_SEC));
+}
+#endif
+
+/****************************************************************************
+BF 
+F * Function    : c_time 
+  * 
+D * Description : time  returns the time since 00:00:00 GMT, January 1, 1970,i
+D *               measured in seconds.
+  *  
+C * Call        :              
+  * 
+P * Parameter   :       
+  * 
+E * Error Code  : 
+  * 
+R * Return      :  
+EF
+ ****************************************************************************/
+ 
+/* ======================================================================== */
+int     c_time( void )
+/* ======================================================================== */
+{
+time_t  T_time;
+
+       return((int) time(&T_time));
+}
+
+/****************************************************************************
+BF
+F * Function    : c_memcpy
+  *
+D * Description : Copy n bytes from source to an destination buffer.
+  * 
+C * Call        : c_memcpy( vpDestination, vpSource, ipBytes )
+  *
+P * Parameter   : void *vpDestination  - Destinationbuffer
+P *               void *vpSource       - Sourcebuffer
+P *               int  *ipBytes        - Bytes to copy           
+  *
+E * Error Code  : none
+  *
+R * Return      : void
+EF
+ ****************************************************************************/
+/* ======================================================================== */
+void	c_memcpy( vpDestination, vpSource, ipBytes )
+/* ======================================================================== */
+char *vpDestination,*vpSource;
+int *ipBytes;
+{
+/*int *ipTest1,*ipTest2,i;*/
+
+	memcpy( (char*)vpDestination, (char*)vpSource, *ipBytes );
+        /* =========== a test output of the integer words ================= */
+/*
+	ipTest1 = (int*)vpSource;
+	ipTest2 = (int*)vpDestination;
+	for( i = 0 ; i < (*ipBytes/2); i++ )
+	{
+		fprintf( stderr, "#[Source %d]>%x<\n",i, *(ipTest1+i) );
+		fprintf( stderr, "#[Destin %d]>%x<\n",i, *(ipTest2+i) );
+	} 
+*/
+       /* ================================================================== */	
+	return;
+} 
+/****************************************************************************
+BF
+F * Function    :
+  *
+D * Description :
+  * 
+C * Call        :            NOT IN USE 
+  *
+P * Parameter   :      
+  *
+E * Error Code  :
+  *
+R * Return      :
+EF
+ ****************************************************************************/
+/* ======================================================================== */
+/*short	iswap( short *sSwapWord )*/
+/* ======================================================================== */
+/*{
+	return( (short)((*sSwapWord >> 8) | (*sSwapWord << 8)) );
+}
+*/
+/****************************************************************************
+BF
+F * Function    : c_str_upcase
+  *
+D * Description : Upper the lower character of a source string
+  * 
+C * Call        : c_str_upcase( cpDestinationStr, cpSourceStr ) 
+  *
+P * Parameter   : char *cpDestinationStr - Destination string, only upper
+P *                                        letter. 
+P *               char *cpSourceStr      - String to convert
+  *
+E * Error Code  : none
+  *
+R * Return      : short - Lenght of the soure string.
+EF
+ ****************************************************************************/
+/* ======================================================================== */
+int c_str_upcase( cpDestinationStr,
+		   ipDesLen,
+		   cpSourceStr,
+		   ipSourceLen )
+/* ======================================================================== */
+char  *cpDestinationStr;
+int   *ipDesLen;
+char  *cpSourceStr;
+int   *ipSourceLen; 
+{
+int iCount,iReturn;
+
+	if( *ipSourceLen > *ipDesLen )
+		iReturn = *ipDesLen;
+	else
+		iReturn = *ipSourceLen;
+
+	for( iCount = (iReturn - 1); iCount >= 0; iCount-- )
+	{
+		if( islower(*(cpSourceStr+iCount) ) )
+			*(cpDestinationStr+iCount) = toupper( *(cpSourceStr+iCount) );
+		else
+			*(cpDestinationStr+iCount) = *(cpSourceStr+iCount);
+	}
+	return( iReturn );
+}
+
+/****************************************************************************
+BF
+F * Function    : fill_block
+  *
+D * Description : Store a block of given size to static buffer if var iFill
+D *               is TRUE. Otherwise get the block back if iFill is FALSE. 
+  * 
+C * Call        : (void)fill_block( cpBlock, iBlockSize, iFill )  
+  *
+P * Parameter   : char *cpBlock    -  Block to store or get back
+P *               int  *iBlockSize -  Size of block 
+P *               int  *iFill      -  TRUE to fill block
+P *                                   FALSE to get filled block 
+  *
+E * Error Code  : none
+  *
+R * Return      : void
+EF
+ ****************************************************************************/
+/* ======================================================================== */
+void fill_block( cpBlock , iBlockSize , iFill )
+/* ======================================================================== */
+char *cpBlock;
+int *iBlockSize; 
+int *iFill;
+{
+static 	char 	scCharBlock[4096];
+	
+	if( *iFill )
+		c_memcpy( (char*)&scCharBlock[0], (char*)cpBlock, iBlockSize );
+	else
+		c_memcpy( (char*)cpBlock, (char*)&scCharBlock[0], iBlockSize );
+	return;
+}
+
+/****************************************************************************
+BF
+F * Function    : get_sfile
+  *
+D * Description : 
+  * 
+C * Call        :          
+  *
+P * Parameter   :
+  *
+E * Error Code  :
+  *
+R * Return      :
+EF
+ ****************************************************************************/
+/* ======================================================================== */
+void	get_sfile( ipMode,
+		   cpPath,
+		   ipPathLen,
+                   cpStat,
+		   cpChan,
+		   cpName,
+		   ipNamLen,  
+		   dpNum_tima,
+		   dpNum_time,
+		   ipRetCode )
+/* ======================================================================== */
+int  *ipMode;  
+char *cpPath;
+int  *ipPathLen;
+char *cpStat;
+char *cpChan;
+char *cpName;
+int  *ipNamLen;  
+double *dpNum_tima;
+double *dpNum_time;
+int *ipRetCode; 
+{
+static char cBeginFlag  = TRUE;
+static char   
+	caStat[STATLEN],
+       	caChan[CHANLEN], 
+       	caPath[BUFLEN],
+       	caName[BUFLEN],
+       	caTemp[BUFLEN],
+       	caFile[BUFLEN],
+       	caWildCard[BUFLEN],
+       	caFileSave[BUFLEN];
+char        *cpDelim,
+	    xxx[20];
+int         iFindCode1  = FALSE,
+	    iFindCode2  = FALSE,
+	    iRetCode	= FALSE; 
+extern int iWildCardAll;
+/*
+double tt = 700101.0;
+dpNum_tima = &tt; 
+dpNum_time = &tt; 
+*/
+
+#ifdef DEBUG
+        fprintf( stderr, "\n########################### BEGIN  get_sfile_ ######################\n" );
+#endif
+	(void)memset( caName, '\0', BUFLEN); 
+	(void)memset( caStat, '\0', STATLEN); 
+	(void)memset( caChan, '\0', CHANLEN); 
+	(void)strncpy( caStat, cpStat, STATLEN-1 );
+	(void)strncpy( caChan, cpChan, CHANLEN-1 );
+	(void)strncpy( caName, cpName, *ipNamLen );
+	caName[*ipNamLen] = 0;
+	(void)StripBlank( caStat );
+	(void)StripBlank( caChan );
+	(void)StripBlank( caName );
+#ifdef DEBUG
+	fprintf( stderr, "\n#==>St [%s] Ch [%s] Na [%s]", caStat,caChan,caName );
+	fprintf( stderr, "\n#==>*ipPathLen %d", *ipPathLen);
+	fprintf( stderr, "\n#==>*ipNameLen %d", *ipNamLen);
+	fprintf( stderr, "\n#==>*dpNum_time %f", *dpNum_time);
+	fprintf( stderr, "\n#==>*dpNum_tima %f", *dpNum_tima);
+#endif
+	if( *ipMode == 0 ) /* read the named directory */
+	{
+		FileFind( NULL, NULL, AV("f") );
+		strncpy( caPath, cpPath, *ipPathLen );
+		cpDelim = strrchr( caPath, '/' );
+#ifdef DEBUG 
+        fprintf( stderr, "\n#==> Delim char %s",cpDelim);
+#endif
+		*cpDelim = '\0'; 
+		(void)StripBlank( caPath );
+#ifdef DEBUG
+        fprintf( stderr, "\n#==> caPath %s pMode == 0 ",caPath);
+#endif
+		strcpy(xxx,caStat);
+		strcat(xxx,"*.*");
+		/*strcat(xxx,caChan);*/
+#ifdef DEBUG 
+        fprintf( stderr, "\n#==> wildcard %s",xxx);
+#endif
+		if( FileFind( caPath, xxx, AV("bdj") ) <= 0 )
+			exit(1);
+		cBeginFlag = FALSE;
+	}
+	(void)memset( caTemp, '\0', BUFLEN+1);
+        (void)StripBlank( caWildCard );
+	if( strstr(caStat, "*") != NULL ) {
+		sprintf( caWildCard, "*/%s.%s",caStat, caChan );
+                (void)strcpy( caFile, caWildCard ); 
+                (void)strcpy( caTemp, caWildCard ); 
+		iWildCardAll = 1;
+	} else {
+#ifdef DEBUG   
+        fprintf( stderr, "\n#==> caName %s",caName );
+#endif
+        	(void)strcpy( caTemp, strrchr( caName, '/' )+1 );
+        	(void)StripBlank( caTemp );
+		if( StrMatch(caTemp, "grf*.dat") ||
+		    StrMatch(caTemp, "GRF*.DAT") ) {
+			caTemp[strlen(caTemp)-6] = '\0';	
+		} else {
+			if( IsLongName(caStat,caChan,caName) )
+        			caTemp[strlen(caTemp)-10] = '\0';
+			else
+				caTemp[strlen(caTemp)-4] = '\0';
+		}
+        	(void)strcat( caTemp, "." );    
+        	(void)strcat( caTemp, caChan );
+        	(void)strcpy( caFile, "*/" );  
+        	(void)strcat( caFile, caTemp );
+        	(void)strcpy( caTemp, caFile );
+        	sprintf( caWildCard, "*/%s*.%s",caStat, caChan );
+		iWildCardAll = 0;
+	} 	
+#ifdef DEBUG
+ 	fprintf( stderr, "\n#==>WILDCARD [%s]", caWildCard );
+	fprintf( stderr, "\n#==>MODE %d [%s]",*ipMode, caFile );
+	fprintf( stderr, "\n#==>ATIME %f  ETIME %f",*dpNum_tima, *dpNum_time );
+
+#endif
+
+	*ipRetCode = INIT;
+	if( *ipMode == 0 || *ipMode == 2 )
+	{
+		*ipRetCode = 2;
+		(void)FileFind(NULL,NULL,NULL);
+		strcpy( caFileSave, "" );                    
+		if( (iFindCode1 = FileFind(caPath, caFile, AV("#"))) > 0 )
+		{
+#ifdef DEBUG
+			fprintf( stderr, "\n#I.0 - found MODE %d [%s] Code[%d]",*ipMode, caFile, iFindCode1 );
+			fprintf( stderr, "\n#I.0 - for wildcard [%s]",caFile );
+#endif
+			if( iRetCode = IsInTime( MODE_0, caStat, caChan, caFile,
+						dpNum_tima, dpNum_time ) )
+			{
+
+				if(iWildCardAll) {
+#ifdef DEBUG
+
+                        fprintf( stderr, "\n#I.0 - break because iWildCardAll %d", iWildCardAll );
+                	fprintf( stderr, "\n#<== Mode %d Return code ->%d\t\n", *ipMode, *ipRetCode
+ );
+#endif
+					(void)strcpy( caFileSave, caFile ); 
+					(void)strcpy( cpName, caFile );
+					*ipRetCode = 0;
+#ifdef DEBUG
+ 
+                        fprintf( stderr, "\n#<== Mode %d Return code now ->%d\tcpName %s\n", *ipMode, *ipRetCode, cpName
+ );
+                        fprintf( stderr, "\n########################### END  get_sfile_ ######################\n" );
+#endif
+                			return;
+				}
+
+                                (void)strcpy( caFileSave, caFile );
+                                (void)strcpy( caFile, caWildCard );
+
+ 
+				while( (iFindCode2 = FileFind(caPath, caFile, AV("&"))) > 0 )
+				{
+					if( iRetCode = IsInTime( MODE_0, caStat, caChan, caFile,
+									dpNum_tima, dpNum_time ) )
+					{
+#ifdef DEBUG
+						fprintf( stderr, "\n#II.0 - found MODE %d [%s] Code[%d]",*ipMode, caFile, iFindCode2 );
+						fprintf( stderr, "\n#II.0 - for wildcard [%s]",caWildCard );
+#endif
+						(void)strcpy( caFileSave, caFile );					
+						(void)strcpy( caFile, caWildCard );
+					}
+				}
+						(void)strcpy( cpName, caFileSave );
+						*ipRetCode = 0;					
+			}
+			else
+			{
+				*ipRetCode = NextLowerTimeFile( *ipRetCode,
+								caWildCard,
+								MODE_1, 
+								caStat, 
+								caChan,
+								caPath, 
+								caFile,
+								dpNum_tima, 
+								dpNum_time,
+								cpName );
+			}
+		}
+		else
+		{
+			*ipRetCode = NextLowerTimeFile( *ipRetCode,
+							caWildCard,
+							MODE_1, 
+							caStat, 
+							caChan,
+							caPath, 
+							caFile,
+							dpNum_tima, 
+							dpNum_time,
+							cpName );
+		}
+
+#ifdef DEBUG
+		fprintf( stderr, "\n#<== Mode %d File [%s] Return code ->%d\t\n", *ipMode, cpName, *ipRetCode    );
+        	fprintf( stderr, "\n########################### END  get_sfile_ ######################\n" ); 
+#endif
+		return;
+	}
+
+	if( *ipMode == 1 )
+	{
+	extern int dSaveTime;
+		dSaveTime = FALSE;		
+		*ipRetCode = 2;
+		(void)FileFind(NULL,NULL,NULL);
+		strcpy( caFile, caName );
+#ifdef DEBUG
+		fprintf( stderr, "\n#III.1 Mode %d searching for File [%s]\t\n",*ipMode, caFile );
+#endif
+		if( (iFindCode1 = FileFind(caPath, caFile, AV("#"))) <= 0 )
+		{
+#ifdef DEBUG
+		fprintf( stderr, "\n#III.1 Mode %d File [%s] not found, Code %d\t\n",*ipMode, caFile, iFindCode1 );
+       		fprintf( stderr, "\n########################### END  get_sfile_ ######################\n" );  
+#endif
+			return;
+		}
+
+#ifdef DEBUG
+                fprintf( stderr, "\n#III.1 Mode %d last File [%s] found\t\n",*ipMode, caFile );
+#endif
+                (void)strcpy( caFile, caWildCard );
+#ifdef DEBUG
+		fprintf( stderr, "\n#III.1 Mode %d use Wildcard [%s]",*ipMode, caFile );
+#endif
+		while( (iFindCode2 = FileFind(caPath, caFile, AV("&"))) > 0 )
+		{
+#ifdef DEBUG
+			fprintf( stderr, "\n#III.2 - found MODE %d [%s] Code[%d]",*ipMode, caFile, iFindCode2 );
+			fprintf( stderr, "\n#III.2 - for wildcard [%s]",caWildCard );
+#endif
+			if( iRetCode = IsInTime( MODE_1, caStat, caChan, caFile,
+						dpNum_tima, dpNum_time ) )
+			{
+				(void)strcpy( cpName, caFile );
+				*ipRetCode = 0;
+				break; 
+			}
+			(void)strcpy( caFile, caWildCard );
+		}
+#ifdef DEBUG
+	fprintf( stderr, "\n#<== Mode %d File [%s] Return code ->%d FindCode %d\t\n",
+						 *ipMode, cpName, *ipRetCode,iRetCode );
+        fprintf( stderr, "\n########################### END  get_sfile_ ######################\n" ); 
+#endif
+		return;						
+	}
+
+#ifdef DEBUG
+	fprintf( stderr, "\n# MODE MISMATCH" );
+        fprintf( stderr, "\n########################### END  get_sfile_ ######################\n" );  
+#endif
+	return;
+}
+
+/* ======================================================================== */
+/* Find the next file with matching time                                    */
+/* ======================================================================== */
+int  NextLowerTimeFile( iRetCode,
+			cpWildCard,
+			iMode, 
+			cpStat, 
+			cpChan,
+			cpPath, 
+			cpFile,
+			dpNum_tima, 
+			dpNum_time,
+			cpName )
+int  iRetCode;
+char *cpWildCard;
+int  iMode; 
+char *cpStat; 
+char *cpChan;
+char *cpPath; 
+char *cpFile;
+double *dpNum_tima; 
+double *dpNum_time;
+char *cpName; 
+/* ======================================================================== */
+{
+extern int dSaveTime;
+
+#ifdef DEBUG
+	fprintf( stderr, "\n# ==> NextLowerTimeFile with %s Code %d", cpWildCard ,iRetCode );
+#endif
+	dSaveTime = FALSE;
+	(void)strcpy( cpFile, cpWildCard );
+	while( FileFind(cpPath, cpFile, AV("&")) > 0 )
+	{
+#ifdef DEBUG
+	fprintf( stderr,"\n ----- FILE current %s", cpFile );
+#endif
+		iLess = iGreater = 0;
+		(void)strcpy( cpName, cpFile );
+		if( IsInTime( iMode, cpStat, cpChan, cpFile,
+				     dpNum_tima, dpNum_time ) )
+		{
+#ifdef DEBUG
+	fprintf( stderr, "\n## NextLowerTimeFile found %s", cpFile );
+#endif
+			iRetCode = -2;
+		}
+		(void)strcpy( cpFile, cpWildCard );
+                if( FileFind(cpPath, cpFile, AV("p&")) > 0 )  {
+
+#ifdef DEBUG
+	fprintf( stderr,"\n ----- FILE forward %s", cpFile ); 
+#endif
+		    	if( IsInTime(iMode, cpStat, cpChan,
+                                     cpFile,dpNum_tima, dpNum_time) ) {
+#ifdef DEBUG
+        fprintf( stderr, "\n## NextLowerTimeFile forward file in time %s ", cpFile );
+#endif
+				return(iRetCode = -2); 
+			}
+			if( iLess && iGreater ) {
+#ifdef DEBUG
+	fprintf( stderr, "\n## Next file is not in time span , returning %s ", cpFile );
+#endif
+				return(iRetCode = -2); 
+			}
+			if( !iLess && iGreater ) {
+#ifdef DEBUG
+        fprintf( stderr, "\n## Next file is greater then ETime, returning %s ", cpFile );
+#endif   
+                                return(iRetCode = -2);
+                        }
+		}
+		else
+		{
+#ifdef DEBUG
+        fprintf( stderr, "\n## NextLowerTimeFile forward NO MORE FILES");
+#endif
+			iRetCode = -2;	
+			break;
+		}		
+		(void)strcpy( cpFile, cpWildCard );
+
+	}
+#ifdef DEBUG
+	fprintf( stderr, "\n## NextLowerTimeFile returned file %s", cpName );
+#endif
+	return( iRetCode );
+}		
+
+
+
+/* ======================================================================== */
+/* Test if File in Time							    */
+/* ======================================================================== */
+int  IsInTime( i0Mode,caStat, caChan, caFile, dpNum_tima, dpNum_time )
+/* ======================================================================== */
+int    i0Mode;
+char   caStat[STATLEN],
+       caChan[CHANLEN], 
+       caFile[BUFLEN];
+double *dpNum_tima,
+       *dpNum_time;
+{
+double dCmpTime;  
+int    iRetCode;
+
+	dCmpTime = ExtractTime( caStat, caChan, caFile );
+    
+#ifdef DEBUG
+                fprintf( stderr, "\n##TestTime dpNum_tima %f dpNum_time %f",iRetCode,caFile ,dpNum_tima, dpNum_time );
+#endif
+
+	if( iRetCode = TestTime( i0Mode, dpNum_tima, dpNum_time, dCmpTime) ) 
+	{
+#ifdef DEBUG
+		fprintf( stderr, "\n##File in time Code[%d] File[%s]",iRetCode,caFile );
+#endif
+	}
+#ifdef DEBUG
+	else
+		fprintf( stderr, "\n##File Code[%d] File[%s] not in time",iRetCode,caFile );
+#endif
+	
+	return( iRetCode );
+}	
+
+/* ======================================================================== */
+/* Strip blanks from a string                                               */
+/* ======================================================================== */
+char *StripBlank( cpStripStr )
+/* ======================================================================== */
+char *cpStripStr;
+{
+char caStripHelp[BUFLEN];
+int  iCharCount = 0;
+char *cpHelpStr = NULL;
+
+	cpHelpStr = cpStripStr;
+	memset( caStripHelp, ' ', BUFLEN );
+	while( *cpHelpStr != '\0' )
+	{
+		if( *cpHelpStr != ' ' )
+			caStripHelp[iCharCount++] = *cpHelpStr;
+
+		cpHelpStr++;
+	}
+	caStripHelp[iCharCount] = '\0';
+	(void)strcpy( cpStripStr, caStripHelp );
+	return( cpStripStr );
+}
+
+/* ======================================================================== */
+/* extract the compare time out of the file name                            */
+/* ======================================================================== */
+double ExtractTime( cpStat, cpChan, caFile )
+/* ======================================================================== */
+char *cpStat; 
+char *cpChan; 
+char *caFile;
+{
+char   caTempBuf[BUFLEN],
+       caTempBuf2[BUFLEN],
+       *cpTemChar,
+       *cpTemChar2;
+int    iCount = 0;
+double dBackTime;
+
+	(void)memset( caTempBuf2, '\0', BUFLEN );  
+	(void)memset( caTempBuf, '\0', BUFLEN );  
+	cpTemChar = strrchr( caFile, '/' );
+	(void)strcpy( caTempBuf2, cpTemChar+1 );
+	cpTemChar2 = strrchr( caTempBuf2, '.' );
+
+	if( StrMatch( caTempBuf2,"grf*.dat") ||
+            StrMatch( caTempBuf2,"GRF*.DAT") ) {
+		strncpy(caTempBuf, cpTemChar2-8, 8 );	
+	} else {
+		if( (strlen(caTempBuf2) - strlen(cpTemChar2)) > 12 )
+			strncpy(caTempBuf, cpTemChar2-12, 12 );
+		else
+			strncpy(caTempBuf, cpTemChar2-6, 6 );
+	}
+
+	for( iCount = strlen(caTempBuf); iCount < 12; iCount++ )
+		caTempBuf[iCount] = '0';
+	strcat( caTempBuf , ".0" );
+	dBackTime = atof( caTempBuf );
+
+#ifdef DEBUG
+	fprintf( stderr, "\n#ExtractTime FileName >%s< CharTime >%s< DoubleTime >%f<",
+								caTempBuf2,
+								caTempBuf,
+								dBackTime );   
+#endif
+  
+	return( dBackTime );
+}
+
+/* ======================================================================== */
+/* extract long file name                                                   */
+/* ======================================================================== */
+int IsLongName( cpStat, cpChan, caFile )
+/* ======================================================================== */
+char *cpStat; 
+char *cpChan; 
+char *caFile;
+{
+char   caTempBuf[BUFLEN],
+       caTempBuf2[BUFLEN],
+       *cpTemChar,
+       *cpTemChar2;
+int    iCount = 0;
+
+	(void)memset( caTempBuf2, '\0', BUFLEN );  
+	(void)memset( caTempBuf, '\0', BUFLEN );  
+	cpTemChar = strrchr( caFile, '/' );
+	(void)strcpy( caTempBuf2, cpTemChar+1 );
+	cpTemChar2 = strrchr( caTempBuf2, '.' );
+
+	if( (strlen(caTempBuf2) - strlen(cpTemChar2)) > 12 )
+		return( TRUE );
+	else
+		return( FALSE );
+
+}
+
+/* ======================================================================== */
+/* Change short to long time                                                */
+/* ======================================================================== */
+double ToLongTime( caFile )
+/* ======================================================================== */
+char *caFile;
+{
+char   caTempBuf[BUFLEN],
+       caTempBuf2[BUFLEN],
+       *cpTemChar,
+       *cpTemChar2;
+int    iCount = 0;
+double dBackTime;
+ 
+        (void)memset( caTempBuf2, '\0', BUFLEN );
+        (void)memset( caTempBuf, '\0', BUFLEN );
+        cpTemChar = strrchr( caFile, '/' );
+        (void)strcpy( caTempBuf2, cpTemChar+1 );
+        cpTemChar2 = strrchr( caTempBuf2, '.' );
+ 
+        if( (strlen(caTempBuf2) - strlen(cpTemChar2)) > 12 )
+                strncpy(caTempBuf, cpTemChar2-12, 12 );
+        else
+                strncpy(caTempBuf, cpTemChar2-6, 6 );
+ 
+        for( iCount = strlen(caTempBuf); iCount < 12; iCount++ )
+                caTempBuf[iCount] = '0';
+        strcat( caTempBuf , ".0" );
+        dBackTime = atof( caTempBuf );
+ 
+#ifdef DEBUG
+        fprintf( stderr, "\n#ToLongTime FileName >%s< CharTime >%s< DoubleTime >%f<",
+                                                                caTempBuf2,
+                                                                caTempBuf,
+                                                                dBackTime );
+#endif
+ 
+        return( dBackTime );
+}
+
+/* ======================================================================== */
+/* Change short to double                                                   */
+/* ======================================================================== */
+double ToLongDouble( dTime )
+/* ======================================================================== */
+double	dTime;
+{
+	if( dTime < (long double)1000000000 )
+		return( (double)(dTime * 1000000) );
+	else
+		return( dTime );
+}
+
+/* ======================================================================== */
+/* compare the time of the file name to the check times                     */
+/* ======================================================================== */
+int TestTime( i0Mode, dpNum_tima, dpNum_time, dCmpTime)
+/* ======================================================================== */
+int    i0Mode;
+double *dpNum_tima; 
+double *dpNum_time; 
+double dCmpTime;
+{
+double dTestE = ToLongDouble(*dpNum_time);
+double dTestA = ToLongDouble(*dpNum_tima);
+extern int dSaveTime;
+extern int iWildCardAll;
+extern int iLess,iGreater;
+
+#ifdef DEBUG
+        fprintf( stderr, "\n#TestTime mode %d[0-%d,1-%d] ATime %f ETime %f CmpTime %f",
+					i0Mode,MODE_0,MODE_1,dTestA,dTestE,dCmpTime );
+#endif
+	if( dCmpTime < dTestA ) iLess = 1;
+	if( dCmpTime > dTestE ) iGreater = 1;
+#ifdef DEBUG
+        fprintf( stderr, "\n# iLess %d  iGreater %d", iLess, iGreater );
+#endif
+	if( i0Mode == MODE_0 )
+	{
+		if( iWildCardAll ) {
+#ifdef DEBUG
+        fprintf( stderr, "\n#M:0 WILDCARD [*.*] %f <= %f",dCmpTime ,dTestA );
+#endif 
+			return( TRUE );
+		}
+
+		if( dCmpTime <= dTestA )
+		{
+#ifdef DEBUG
+	fprintf( stderr, "\n#M:0 %f <= %f",dCmpTime ,dTestA );
+#endif
+			return( TRUE );
+		}
+		else
+			return( FALSE );
+	}
+	else if( i0Mode == MODE_1 )
+	{
+		if( dCmpTime <= dTestE )
+		{
+#ifdef DEBUG
+	fprintf( stderr, "\n#M:1 (%f) <= %f",dCmpTime ,dTestE );
+#endif		
+				
+			if( dCmpTime <= dTestA )
+			{
+#ifdef DEBUG
+	fprintf( stderr, "\n#M:1 (%f) <= (%f and %f)",dCmpTime ,dTestA ,dTestE );
+#endif
+				dSaveTime = TRUE;
+			}
+
+			if( (dSaveTime == TRUE) &&  
+		            (dCmpTime > dTestA) && iWildCardAll )
+			{
+#ifdef DEBUG
+        fprintf( stderr, "\n#M:1 WILDCARD [*.*] ");
+#endif
+				return( FALSE );
+			}
+
+                	if( dCmpTime >= dTestA && dCmpTime <= dTestE ) {
+#ifdef DEBUG
+        fprintf( stderr, "\n#M:1 %f <= (%f) <= %f",dTestA, dCmpTime ,dTestE );
+#endif
+				return(TRUE);
+			}
+			else
+				return( FALSE );
+		}
+		else
+				return( FALSE );		
+	}
+	else
+	{
+		if( dCmpTime >= dTestA && dCmpTime <= dTestE )
+			return(TRUE);
+		else
+			return(FALSE);
+	} 
+}
+
+/****************************************************************************
+BF
+F * Function    : get_file
+  *
+D * Description : 
+  * 
+C * Call        :          
+  *
+P * Parameter   :
+  *
+E * Error Code  :
+  *
+R * Return      :
+EF
+ ****************************************************************************/
+/* ======================================================================== */
+void	get_file( ipMode,
+                   cpStartDir,
+		   cpFileName,
+		   ipNameLength,
+		   ipRecNum,  
+		   ipRetCode )
+/* ======================================================================== */  
+int  *ipMode;
+char *cpStartDir;
+char *cpFileName;
+int *ipNameLength;
+int  *ipRecNum;  
+int  *ipRetCode; 
+{ 
+static char cBeginFlag = TRUE;
+static char caPath[BUFLEN],
+            caFile[BUFLEN],
+	    caStrUp[BUFLEN] =""; 
+int iFindRtnCode = 0,
+    iFound       = FALSE,
+    iStrLen	 = 0;
+
+	if( cBeginFlag ) /* read the named directory */
+	{
+		strcpy( caPath, cpStartDir );		 
+		(void)StripBlank( caPath );
+		if( (iFindRtnCode = FileFind(caPath, "grf*.dat", AV("bu"))) <= 0 )
+		{
+			*ipRetCode = 3;
+			return;
+		}		
+#ifdef DEBUG
+		else
+			fprintf( stderr, "\n#%d files found !\n", iFindRtnCode );
+#endif
+		cBeginFlag = FALSE;
+	}
+	else
+		FileFind( NULL, NULL, NULL );
+
+	(void)StripBlank( cpFileName );
+	if( *ipMode == 0 )
+	{
+		strcpy( caFile, "grf*.dat" );
+		if( (iFindRtnCode = FileFind(caPath, caFile, AV("#"))) < 0 )
+			*ipRetCode = 3;
+		else if( iFindRtnCode == 1 )
+		{
+			strcpy( cpFileName, caFile );
+			*ipRetCode = 0;			
+		}
+		else
+			*ipRetCode = 2;
+	}
+	else
+	{
+		strncpy( caFile, cpFileName, *ipNameLength);
+		if( (iFindRtnCode = FileFind(caPath, caFile, AV("#"))) < 0 )
+		{
+			*ipRetCode = 3;
+			return;
+		}
+		else if( iFindRtnCode == 1 )
+		{
+			strcpy( cpFileName, caFile );
+			*ipRetCode = 0;
+			return;			
+		}
+		else
+		{
+			FileFind( NULL, NULL, NULL );
+			strcpy( caFile, "grf*.dat" );
+			do
+			{
+				iFindRtnCode = FileFind(caPath, caFile, AV("#"));
+				if( iFindRtnCode < 0 )
+				{
+					*ipRetCode = 3;
+					return;
+				}
+				if( iFindRtnCode > 0 )
+				{
+					if( strstr(caFile, cpFileName) )
+						iFound = TRUE;
+					*ipRecNum = 
+						( strcspn(caFile, ".") == 11 )? 360 : 511;
+				} 	
+ 				
+			}while( iFindRtnCode != 0 && !iFound );
+
+			if( iFindRtnCode >= 0 )
+				*ipRetCode = ( !iFound ) ? 2 : -2;				
+
+			strcpy( cpFileName, caFile );			
+		}
+						
+	}
+	return;
+}

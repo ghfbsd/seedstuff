@@ -1,0 +1,106 @@
+MLOC		= ../../mkconf
+
+include	$(MLOC)/Make.$(OS).FLAGS
+
+MAKEFILE      = Make.$(ARCH).Targets
+
+OBJ	      = ../../lib/$(OS)
+BIN           = ../../bin/$(OS)
+SRC           = ../../src/Fortran
+
+
+
+
+CHECKLIBS     = \
+		../../lib/$(OS)/libF$(OS).a \
+		../../lib/$(OS)/libC$(OS).a \
+		../../lib/$(OS)/libT$(OS).a \
+              
+LLIBS         = $(CHECKLIBS) $(LIBS)
+
+
+nothing:
+	@ echo "use: make <what to do>"
+	@ echo "     - check_qic"
+	@ echo "     - check_tape"
+	@ echo "     - check_file"
+	@ echo "     - copy_seed"
+	@ echo "     - check_seed"
+	@ echo "     - extr_qic"
+	@ echo "     - extr_tape"
+	@ echo "     - extr_file"
+	@ echo "     - make_dlsv"
+	@ echo "     - make_qseed"
+	@ echo "     or
+	@ echo "     - targets for all programs !"
+
+
+targets:	copy_seed \
+		check_seed \
+		check_qic \
+		check_tape \
+		check_file \
+		extr_qic \
+		extr_tape \
+		extr_file \
+		make_dlsv \
+		make_qseed
+		
+
+copy_seed:	$(BIN)/copy_seed
+
+check_seed:	$(BIN)/check_seed
+
+check_qic:	$(BIN)/check_qic
+
+check_tape:	$(BIN)/check_tape 
+
+check_file:	$(BIN)/check_file
+
+extr_qic:	$(BIN)/extr_qic
+
+extr_tape:	$(BIN)/extr_tape
+
+extr_file:	$(BIN)/extr_file
+
+make_dlsv:	$(BIN)/make_dlsv
+
+make_qseed:	$(BIN)/make_qseed
+
+
+$(BIN)/copy_seed::	$(OBJ)/copy_seed.o $(CHECKLIBS)
+	$(LINK.F) -o	$@  $(OBJ)/copy_seed.o $(LLIBS)
+
+$(BIN)/check_seed::	$(OBJ)/check_seed.o $(CHECKLIBS)
+	$(LINK.F) -o	$@  $(OBJ)/check_seed.o $(LLIBS)
+
+$(BIN)/check_qic::	$(OBJ)/check_qic.o $(CHECKLIBS)
+	$(LINK.F) -o	$@  $(OBJ)/check_qic.o $(LLIBS)
+
+$(BIN)/check_tape::	$(OBJ)/check_tape.o $(CHECKLIBS)
+	$(LINK.F) -o	$@  $(OBJ)/check_tape.o $(LLIBS)
+
+$(BIN)/check_file::	$(OBJ)/check_file.o $(CHECKLIBS)
+	$(LINK.F) -o	$@  $(OBJ)/check_file.o $(LLIBS)
+
+$(BIN)/extr_qic::	$(OBJ)/extr_qic.o $(CHECKLIBS)
+	$(LINK.F) -o	$@  $(OBJ)/extr_qic.o $(LLIBS)
+
+$(BIN)/extr_tape::	$(OBJ)/extr_tape.o $(CHECKLIBS)
+	$(LINK.F) -o	$@  $(OBJ)/extr_tape.o $(LLIBS)
+
+$(BIN)/extr_file:	$(OBJ)/extr_file.o $(CHECKLIBS)
+	$(LINK.F) -o	$@  $(OBJ)/extr_file.o $(LLIBS)
+
+$(BIN)/make_dlsv::	$(OBJ)/make_dlsv.o $(CHECKLIBS)
+	$(LINK.F) -o	$@  $(OBJ)/make_dlsv.o $(LLIBS)
+
+$(BIN)/make_qseed::	$(OBJ)/make_qseed.o $(CHECKLIBS)
+	$(LINK.F) -o	$@  $(OBJ)/make_qseed.o $(LLIBS)
+
+
+
+$(OBJ)/%.o: %.F
+	$(COMPILE.F) $(DBG) $< -o $@
+
+

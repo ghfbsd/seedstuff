@@ -1,0 +1,54 @@
+DEBUG		= -g
+MLOC		= ../../mkconf
+
+include	$(MLOC)/Make.$(ARCH).FLAGS
+
+MAKEFILE      = Make.$(ARCH).Targets
+
+OBJ	      = ../../lib/$(OS)
+BIN           = ../../bin/$(OS)
+SRC           = ../../src/Fortran
+
+CHECKLIBS     = \
+		../../lib/$(OS)/libF$(ARCH).a \
+		../../lib/$(OS)/libC$(ARCH).a \
+		../../lib/$(OS)/libT$(ARCH).a \
+              
+LLIBS         = $(CHECKLIBS) $(LIBS) -lm
+
+LINK          = $(CC) $(LDFLAGS)
+FLINK         = $(FC) $(FCUSED) $(LDFLAGS)
+
+CCUSED	      = $(CCFLAGS) $(DEBUG)
+FCUSED	      = $(FFLAGS) $(DEBUG)
+
+
+
+
+TARGETS       = \
+	$(BIN)/copy_seed \
+	$(BIN)/check_seed \
+	$(BIN)/check_qic \
+	$(BIN)/check_tape \
+	$(BIN)/check_file \
+	$(BIN)/extr_qic \
+	$(BIN)/extr_tape \
+	$(BIN)/extr_file \
+	$(BIN)/make_dlsv \
+	$(BIN)/make_qseed \
+	$(BIN)/swap_mseed \
+	$(BIN)/read_seed
+
+targets: $(TARGETS)
+
+.for F in $(TARGETS:T) 
+$(BIN)/$F:	$(OBJ)/$F.o $(CHECKLIBS)
+	$(FLINK) -o $@ $(OBJ)/$F.o $(LLIBS)
+.endfor
+
+.for F in $(TARGETS:T)
+$(OBJ)/$F.o: $F.f
+	$(FC) $(FCUSED) -c $F.f -o $@
+.endfor
+
+$(OBJ)/copy_seed.o $(OBJ)/make_dlsv.o $(OBJ)/cre_seed_head_sub.o $(OBJ)/copy_seed_sub.o: ../include/head_seed.inc

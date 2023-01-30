@@ -1,0 +1,22 @@
+MLOC		= mkconf
+CLOC		= src/C
+FLOC		= src/Fortran
+TOOLLOC		= ToolsLib
+DEFS		= ARCH=$(ARCH) OS=$(OS) CC=$(CC)
+
+all: libs targets
+
+libs:
+	(cd $(CLOC);    $(MAKE) -f Make.any.CLib $(DEFS) update) 
+	(cd $(FLOC);    $(MAKE) -f Make.any.FLib $(DEFS) update)
+	(cd $(TOOLLOC); $(MAKE) -f Make.any.TLib $(DEFS) update)
+
+targets:
+	(cd $(FLOC); $(MAKE) -f Make.any.Targets $(DEFS) targets)
+
+
+
+
+
+
+	

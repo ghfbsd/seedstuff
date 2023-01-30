@@ -1,0 +1,303 @@
+List of changes from GEOFON distribution (G. Helffrich/U. Bristol)
+
+mkconf/Make.Linux.FLAGS
+
+  Add FFLAGS for Fortran compilation, FC file in top-level directory
+  for name of Fortran compiler (g77 or f77 as appropriate).
+
+src/C/C_functions.c
+
+  Encode times internally used for file searching logic to use fewer
+  significant figures.  Former format caused numerical overflows and
+  invalid time comparisions under Red Hat 4.2 Linux with gcc 2.7.2.
+
+  get_sfile:
+    Remove unconditional call to exit(1)
+
+  ExtractTime:
+    Use new time format; pad to 14 characters.
+
+  julday:
+    New function
+  
+  ToLongTime:
+    Use new time format.  This function appears to be unused in the present
+    version of the subroutine package.
+  
+  ToLongDouble:
+    Return new time format
+
+  ToStd:
+    New function to convert time in seconds since 1 Jan, 1970 to new
+    time format.
+  
+  FromStd:
+    New function to return in seconds since 1 Jan, 1970 given new time format.
+
+  TestTime:
+    Debugging output to conditional compilation.
+
+src/Fortran/copy_seed.f
+
+  Make into directly-compied Fortran code; conditional compilation logic
+  turned into executable code via swap variable value.
+
+  Violation of Fortran standard in 5 instances:  reads into variable used
+  as DO loop control variable.
+
+  Stuttering of 'copy_seed' greeting with wrong version number when
+  usage printed out.
+
+src/Fortran/copy_seed_sub.F
+
+  extr_diff:
+    get_diff function doesn't properly byte swap Steim 1 data format;
+    use equivalence logic to swap 2 and 4 byte quantities.  Note that
+    shift logic in get_diff does *not* properly work right on little-endian
+    machines.
+
+  swap_mseed:
+    set wordord = 1 in data blockettes when converting to Sun format
+    (ind=-1)
+
+  byteorder:
+    new function to return SEED definition of byte order of machine
+    on which subroutine is run (used by copy_seed for swap logic).
+
+src/Fortran/Make.Linux.FLib
+
+  Finer control on debug flags, use $(FC) variable for Fortran compiler
+  name.
+
+src/Fortran/Make.Linux.Targets
+
+  Finer control on debug flags, use $(FC) to link Fortran-compiled
+  executables.  Add new target make_qseed, also make copy_seed.f a
+  Fortran program to facilitate debugging with gdb.
+
+src/Fortran/make_qseed.f
+
+  Updated for use with PASSCAL version 1.9 programs.  These produce
+  mseed blockettes of 4096 byte size.
+
+  Make into Fortran program (.f suffix).
+
+  Add option -s to revert to 1024 byte blockettes.
+
+  Change channel naming logic: > 20sps H, < 10 sps L, otherwise B
+
+  Remove tab characters in format statements (invalid Fortran)
+
+src/Fortran/copy_seed_sub.f
+
+  dec_fixhdr, dec_fixhdr_ful:
+    If time correction was applied to header date, then timcor is
+    zero.  This is to be consistent with behavior of all def_fixhdr*
+    routines which unconditionally set the Activity flags in mseed header
+    to zero, meaning the time correction was *not* applied.
+    ***NOTE*** Disadvantage of this change is that record of time correction
+    is lost.
+
+  fill_real:
+    simplify logic and fix bug that zeroed all digits of exact power-of-10
+    numbers.
+
+src/Fortran/copy_seed_sub.f
+  parse_seed_db:
+    Explicit checks for table overflow and report errors.
+    Expand a number of tables.
+
+src/Fortran/copy_seed.f
+  copy_seed:
+    Add debug options
+
+src/Fortran/cre_seed_head_sub.f
+  write_resp_coeff:
+    Handle case of incredibly long type 54 FIR coefficient blockettes.  Split
+    them into overflow blockettes on subsequent SEED volume blocks.
+
+    Add debug output activated by main program.
+
+  cre_seed_head:
+    If no time spans provided, and no start/end time given for seed volume
+    creation, invent default.  Otherwise use start/end times provided.
+
+    Fix bug when dataless volumes being written: only first station header
+    written.
+
+src/Fortran/dlsv.f
+  main:
+    Use network duration for validity extent of seed volume.
+
+    Optionally keep files when finished, but delete by default.
+
+    Parse for debugging options.
+
+    Provide explicit volume label option.
+
+2005 25 Jan./GRH
+src/include/head_seed.inc:
+    Widen strings for station start/end times in database.
+
+src/Fortran/copy_seed_sub.f:
+    Parse times with hour minute second fields, too.
+    Make parse_time into a subroutine, not a function.
+
+src/Fortran/copy_seed.f, .../make_dlsv.f, .../cre_seed_head_sub.f:
+    change function to subroutine calls for parse_time
+
+2006 8 June/GRH
+src/Fortran/copy_seed_sub.f, copy_seed.f:
+    Handle reblocking of smaller blocks into 4096 byte blocks (Nanometrics
+    data).
+    Change calling sequence for extr_diffs; re-code get_nibble.
+    Fix bug in make_4096 which caused it not to save jbuf buffer across
+    routine calls.
+
+2006 18 Nov./GRH
+src/Fortran/check_seed.f:
+    Fix bug in option processing.  Did not handle -B option properly.
+src/Fortran/copy_seed_sub.f:
+    Fix bug in option processing.  Did not handle the last argument
+    correctly and didn't assign it to the ' ' (blank) option.
+
+2006 19 Nov./GRH
+src/Fortran/copy_seed.f:
+    Check for provision of mandatory options.
+src/Fortran/copy_seed_sub.f:
+    Fix bug in handling of one station networks.  Did not add station to search
+    list.
+
+2006 29 Nov./GRH
+src/Fortran/copy_seed.f:
+    Add time trace option (not complete, but a start).
+    Track first and last samples in Steim buffers so decompression checks can
+    be made.
+    Fix formatting of 'End of input volume:' message.
+src/Fortran/copy_seed_sub.f:
+    Fix logic for doing byte swapping on little-endian machines.
+
+2007 02 Feb./GRH
+src/Fortran/copy_seed_sub.f:
+    Fix punctuation of time items in fill_time when mode=2.
+
+2007 29 Jul./GRH
+src/Fortran/copy_seed_sub.f:
+    Fix code to byte-swap mseed header values.  (I can't believe that I am still
+    fixing bugs of this type -- it has been 10 years so far.)
+
+src/Fortran/make_qseed.f:
+    Add -n, -r, -o options; report endianness of input data.  Change naming
+    options to SEED default rates (H, B, M, L).
+
+2007 5 Sep./GRH
+src/Fortran/{copy_seed_sub.f,copy_seed.f}:
+    Fix (again!) code to byte-swap mseed header values.  This version will
+    use a database of mixed-endian mseed, and will always write big-endian
+    mseed as the output volume.
+
+    Make i4swap into a subroutine from a function.
+
+2007 7 Sep./GRH
+src/Fortran/make_qseed.f:
+    Add sample rate to output; fix endianness reporting.  Fix re-blocking code
+    to work with little-endian data in archives.
+
+src/Fortran/copy_seed_sub.f:
+  make_4096:
+    Clarify blocking code, fix bugs in calculating # frames in blockette.
+
+2007 11 Nov./GRH
+src/Fortran/make_qseed.f:
+    Fix re-blocking to work with arbitrary blocking factors (256, 512, etc.)
+
+2007 14 Nov./GRH
+src/includes/head_seed.inc:
+    Add mseed data blocking trace flag (-t d)
+src/Fortran/copy_seed.f:
+    Add mseed data blocking trace flag (-t d)
+    Fix bug causing all data blocks to appear to be little-endian.
+src/Fortran/copy_seed_sub.f:
+  swap_mseed:
+    Fix bug in swap back to big-endian (swap type -1).
+ToolsLib/avldelete.c:
+    Fix function declarations to prevent newer gccs from complaining.
+
+2010 6 Oct./GRH
+src/Fortran/make_qseed.f:
+    Add flag to set explicit sample rate (-s x) to recover from corrupted data
+    blocks.
+src/C/TapeRead-notape.c:
+    New routine for no tape i/o available.
+mkconf/Make.macos.FLAGS:
+    Explicit 32/64 bit compile flags.
+src/C/Make.macos.CLib:
+    Use TapeRead-notape.c for MacOS builds.
+
+2012 24 Aug./GRH
+src/Fortran/check_seed.f:
+    Adjust times for leap seconds recorded in blockettes.
+    Remove vestigial code and fix test of unset variable.
+src/Fortran/make_qseed.f:
+    Adjust times for leap seconds recorded in blockettes.
+
+2012 30 Aug./GRH
+src/Fortran/check_seed.f:
+    Preserve data format and block size from 1000 blockette and use to
+    decide whether to do Steim sample count checks.
+
+2014 30 Dec./GRH
+src/Fortran/copy_seed_sub.f:
+  parse_seed_db:
+    If reading response file and no SEED_STUFF_HOME given, look in current
+    directory.
+
+2015 6 Jan./GRH
+src/Fortran/copy_seed_sub.f:
+  get_sub_string:
+    Fix logic assuming exactly one blank between strings.  Absolutely
+    unbelievable coding flaw.
+
+2018 24 Aug./GRH
+src/Fortran/check_seed.f:
+  -a option without block didn't work; fixed check for following digit string.
+  Updated -a option to repair sample count and xN value in Steim-1 frames.
+
+2018 10 Sep./GRH
+src/Fortran/copy_seed_sub.f:
+  (dec_fixhead): Fix heuristics to detect byte swapped header based on date
+  range.  Wrong verdict if last day in leap year.
+
+2018 18 Sep./GRH
+src/Fortran/check_seed.f, src/Fortran/copy_seed_sub.f:
+  (main): Accept records with DRQMB tags as equivalent to D.
+  (dec_fixhead, dec_fixhead_full): ditto.
+
+2018 21 Sep./GRH
+src/Fortran/check_seed.f:
+  (main): Don't complain about sample checks on STEIM-2 data.
+src/Fortran/copy_seed_sub.f:
+  (dec_fixhead): handle 1000 not first blockette
+  (dec_fixhed_ful): ditto
+
+2019 31 Jan./GRH
+src/Fortran/make_qseed.f:
+   (main): Trust the sample count in each blocktte header unless -R is set.
+   Led to junk at end of Steim data to be included if the Steim control words
+   were not zeroed but the sample count in the blockette was right.
+
+2019 02 Aug./GRH
+src/include/head_seed.inc:
+   Make no_denom into an array.
+src/Fortran/copy_seed_sub.f:
+   (write_resp_coeff): Write zero denom count at end of coefficients in any
+   overflow blockette 54.
+   (cre_head_seed): Trace gain at every stage under -t h option.
+   (parse_seed_db): Use no_denom(i)
+src/Fortran/cre_seed_head_sub.f:
+   (write_coeff_abbr): Use no_denom(i)
+
+2019 03 Aug./GRH
+src/Fortran/make_dlsv.f:  Don't overwrite dataless.seed because block SEED i/o
+   will not truncate the output file and junk may be left at the end of a
+   previous dataless SEED.  Warn and say to remove before re-running.

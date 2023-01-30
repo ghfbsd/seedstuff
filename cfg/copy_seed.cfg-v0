@@ -1,0 +1,209 @@
+#       copy_seed Configuration File
+#
+#	CVULVZ experiment
+#
+#       Abbreviation Dictionaries
+#
+# Format_abbr: Abbreviation dictionary for formats of data records
+# Parameter: 1 - format identifier code, 2 - format name, 3 - family type, 
+# 4 - ddl keys 
+# Here: DDL description of Steim-1 data compression scheme
+# (see SEED Manual Vers.2.3, pp 151)
+#
+Format_abbr> 1 Steim_Integer_Compression_Format 50 ->
+	-> F1_P4_W4_D0-31_C2_R1_P8_W4_D0-31_C2 ->
+	-> P0_W4_N15_S2,0,1 ->
+	-> T0_X_N0_W4_D0-31_C2 ->
+	-> T1_N0_W1_D0-7_C2_N1_W1_D0-7_C2_N2_W1_D0-7_C2_N3_W1_D0-7_C2 ->
+	-> T2_N0_W2_D0-15_C2_N1_W2_D0-15_C2 ->
+	-> T3_N0_W4_D0-31_C2
+#        
+# Inst_abbr: Abbreviation dictionary for seismometers
+# Parameter: 1 - instrument lookup code, 2 - seismometer type
+#
+Inst_abbr> 1 Streckeisen_STS-1V/VBB_Seismometer
+Inst_abbr> 2 Streckeisen_STS-1H/VBB_Seismometer
+Inst_abbr> 3 Streckeisen_STS-2_Seismometer
+Inst_abbr> 4 Streckeisen_STS-1V_Seismometer
+Inst_abbr> 5 Streckeisen_STS-1H_Seismometer
+Inst_abbr> 6 Guralp_CMG-3T_seismometer
+#
+# Unit_abbr: Abbreviation dictionary for used units
+# Parameters: 1 - unit lookup code, 2 - unit name, 3 - unit description
+#
+Unit_abbr> 1 COUNTS Digital_Counts
+Unit_abbr> 2 COUNTS/V Counts_per_Volt
+Unit_abbr> 3 M/S Velocity_in_Meters_per_Second
+Unit_abbr> 4 V Volts
+Unit_abbr> 5 A Amperes
+#
+# Comment: Comment dictionary
+# Parameters: 1 - comment lookup code, 2 - comment
+#
+Comment> 1 S Lava_tube_site:_N-S/E-W_alignment_magnetic
+Comment> 2 S Site_near_occupied_house,_expect_domestic_noise
+Comment> 3 S Unidentified_high_frequency_noise
+Comment> 4 S Road_construction_1_km_from_site_2002/08-2003/03
+#
+#       Response Dictionaries
+#
+# Analog stages (seismometer & analog filters): Poles & zeros representation (PAZ)
+# Parameters: 1 - response lookup key, 2 - response name, 3 - no of zeros,
+#   4 - no of poles, 5 - norm. factor, 6 - norm. freq., 7 - stage gain,
+#   8 - gain freq., 9 - input units key, 10 - output units key,
+#  11 - zeros, 12 - poles
+#
+#   GRF PAZ response
+Resp_paz> 1 GRF-PAZ 2 9 3.0202814e10 1.0 3.0202814e10 1.0 3 4 ->
+	-> (0.0,0.0) (0.0,0.0) ->
+	-> (-31.416,0.0) (-0.222,0.222) (-0.222,-0.222) (-7.006,30.625) (-7.006,-30.625) ->
+	-> (-19.572,24.574) (-19.572,-24.574) (-28.306,13.629) (-28.306,-13.629)
+#   STS-1/VBB PAZ response
+Resp_paz> 2 STS-1/VBB-PAZ 2 4 3948.58 0.02 2400.0 0.02 3 4 ->
+	-> (0.0,0.0) (0.0,0.0) ->
+	-> (-0.01234,0.01234) (-0.01234,-0.01234) (-39.18,49.12) (-39.18,-49.12)
+#   STS-2 PAZ response
+Resp_paz> 3 STS-PAZ 2 5 6.0077E+07 0.02 1500.0 0.02 3 4 ->
+	-> (0.0,0.0) (0.0,0.0) ->
+	-> (-0.037004,-0.037016) (-0.037004,0.037016) (-251.33,0.0) ->
+	-> (-131.04,-467.29) (-131.04,467.29)
+#   CMG-3T PAZ response
+Resp_paz> 4 CMG-3T-PAZ 2 2 1.0 0.04 1500.0 0.04 3 4 ->
+	-> (0.0,0.0) (0.0,0.0) ->
+	-> (-0.04442,-0.04442) (-0.04442,0.04442)
+#
+# Digitizer stage: coefficients representation
+# Parameters: 1 - response lookup key, 2 - response name, 3 - input units key (V),
+#   4 - output units key (counts), 5 - sampling rate, 6 - gain, 7 - gain freq
+#   Q680 digitizer
+Resp_digit> 1 Q680DIGI 4 1 5120.0 400000.0 0.0
+Resp_digit> 2 Q52KDIGI 4 1 1280.0 400000.0 0.0
+Resp_digit> 3 Reftek72A/02 4 1 1000.0 400000.0 0.0
+Resp_digit> 4 GuralpDM24 4 1 200.0 1.0 0.0
+#
+# FIR filter stages: coefficients representation
+# Parameters: 1 - response lookup key, 2 - response name (file name for coeff.),
+#   3 - no of numer., 4 - no of denom., 5 - input units key (c), 6 - outp. units key (c),
+#   7 - input sampling rate, 8 - decim. factor, 9 - decim. delay,
+#  10 - appl. correction, 11 - gain, 12 - gain freq
+#   Decimation 5120 -> 320 Hz (Q680 - DSP)
+Resp_coeff> 1 Deci16 64 0 1 1 5120.0 16 0.006 0.0 1.0 0.0
+#   Decimation 320 -> 80 Hz (Q680 - DSP)
+Resp_coeff> 2 Deci4.1 72 0 1 1 320.0 4 0.077 0.0 1.0 0.0
+#   Decimation 80 -> 40 Hz (Q680 - DSP)
+Resp_coeff> 3 Deci2 64 0 1 1 80.0 2 0.379 0.0 1.0 0.0
+#   Decimation 40 -> 20 Hz (Q680 - DSP)
+Resp_coeff> 4 Deci2 64 0 1 1 40.0 2 0.76 0.0 1.0 0.0
+#   Decimation 20 -> 10 Hz (Q680 - DSP)
+Resp_coeff> 5 Deci2 64 0 1 1 20.0 2 1.52 0.0 1.0 0.0
+#   Decimation 10 -> 1 Hz (Q680 - DSP)
+Resp_coeff> 6 Deci10.1 260 0 1 1 10.0 10 11.402 0.0 1.0 0.0
+#   Decimation 20 -> 5 Hz (Q680/Q52K - DA) 
+Resp_coeff> 7 Deci4.2 50 0 1 1 20.0 4 2.875 0.0 1.0 0.0
+#   Decimation 5 -> 1 Hz (Q680/Q52K - DA)
+Resp_coeff> 8 Deci5 200 0 1 1 5.0 5 20.0 0.0 4.0 0.0
+#   Decimation 1 -> 10 s (Q680/Q52K - DA)
+Resp_coeff> 9 Deci10.2 400 0 1 1 1.0 10 200.0 222.88 4.0 0.0
+#   Decimation 1280 -> 160 Hz (Q52K - DSP)
+Resp_coeff> 10 Deci8.1 24 0 1 1 1280.0 8 0.0089844 0.0 1.0 0.0
+#   Decimation 160 -> 20 Hz (Q52K - DSP)
+Resp_coeff> 11 Deci8.2 128 0 1 1 160.0 8 0.39687 0.0 1.0 0.0
+#
+#       Network Description
+#
+#   Parameter: 1 - network abbr., 2 - FDSN network code, 3 - network name
+#       description <= 50 characters.
+#                         1         2         3         4         5
+#                12345678901234567890123456789012345678901234567890
+#
+#Network> GFN GE GEOFON_Program,_GFZ_Potsdam,_Germany
+Network> CVULVZ YY Cabo_Verde_Ultra-low_velocy_zone_study_UB/IST/INMG
+#
+#       Station & Channel Description
+#
+# Station descriptor: 1 - station code, 2 - station name, 3 - latitude,
+#   4 - longitude, 5 - elevation, 6 - start of validity year/date,
+#   7 - end of validity year/date
+#
+# Channel descriptor: 1 - channel ident, 2 - instr. key, 3 - input units key,
+#   4 - calib. units key, 5 - local depth, 6 - azimuth, 7 - dip,
+#   8 - format ident key,
+#   9 - sampling rate, 10 - max. clock drift, 11 - PAZ lookup key/gain,
+#  12 - digitizer lkp key/gain, 13 - FIR stages lkp keys, 14 - channel sensitivity,
+#  15 - sens. freq
+#
+# Check datalogger gain, channel sensitivity, sensitivity frequency.
+#
+# Station location GPS log average (checked), elev. approximate
+Station> SNIC Monte_Gordo,_Sao_Nicolau 16.62012 -24.34672 1092.0 2002/222 0/0
+Channel> LHZ 3 3 5 0.0 0.0 -90.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> LHN 3 3 5 0.0 0.0 0.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> LHE 3 3 5 0.0 90.0 0.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHZ 3 3 5 0.0 0.0 -90.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHN 3 3 5 0.0 0.0 0.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHE 3 3 5 0.0 90.0 0.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+#
+# Station location GPS log average (checked), elev. approximate
+Station> PJOR Pedra_Jorge,_Santo_Antao 16.98413 -25.19426 659.0 2002/214 0/0
+Channel> LHZ 3 3 5 0.0 0.0 -90.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> LHN 3 3 5 0.0 0.0 0.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> LHE 3 3 5 0.0 90.0 0.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHZ 3 3 5 0.0 0.0 -90.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHN 3 3 5 0.0 0.0 0.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHE 3 3 5 0.0 90.0 0.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+#
+# Station location and elevation from RefTek GPS (checked)
+Station> PATM Patim,_Fogo 14.86933 -24.42407 570.0 2002/213 0/0
+Station_comment> 2 2002/213 2009/365
+Station_comment> 3 2002/213 2009/365
+Channel> LHZ 3 3 5 0.0 0.0 -90.0 1 1.0 0.02 3/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> LHN 3 3 5 0.0 0.0 0.0 1 1.0 0.02 3/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> LHE 3 3 5 0.0 90.0 0.0 1 1.0 0.02 3/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHZ 3 3 5 0.0 0.0 -90.0 1 50.0 0.02 3/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 3 3 5 0.0 0.0 0.0 1 50.0 0.02 3/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 3 3 5 0.0 90.0 0.0 1 50.0 0.02 3/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+# Station location GPS log average (checked), elev. approximate
+Station> MLOS Monte_Losna,_Cha_das_Caldeiras,_Fogo 14.97596 -24.33798 1650.0 2002/226 0/0
+Station_comment> 1 2002/226 2009/365
+Channel> LHZ 3 3 5 0.0 0.0 -90.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> LHN 3 3 5 0.0 0.0 0.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> LHE 3 3 5 0.0 90.0 0.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHZ 3 3 5 0.0 0.0 -90.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHN 3 3 5 0.0 0.0 0.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHE 3 3 5 0.0 90.0 0.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+#
+# Station location GPS log average (checked), elev. approximate
+Station> MING Mato_do_Ingles,_Sao_Vicente 16.86283 -24.93654 1000.0 2002/229 0/0
+Channel> LHZ 3 3 5 0.0 0.0 -90.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> LHN 3 3 5 0.0 0.0 0.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> LHE 3 3 5 0.0 90.0 0.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHZ 3 3 5 0.0 0.0 -90.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHN 3 3 5 0.0 0.0 0.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHE 3 3 5 0.0 90.0 0.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+#
+# Station location GPS log average (checked), elev. approximate
+Station> SALA Sal_airport_radiosonde_station,_Sal 16.73283 -22.93566 60.0 2002/234 0/0
+Station_comment> 4 2002/226 2009/365
+Channel> LHZ 3 3 5 0.0 0.0 -90.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> LHN 3 3 5 0.0 0.0 0.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> LHE 3 3 5 0.0 90.0 0.0 1 1.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHZ 3 3 5 0.0 0.0 -90.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHN 3 3 5 0.0 0.0 0.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+Channel> BHE 3 3 5 0.0 90.0 0.0 1 50.0 0.02 3/1500. 4/410000.0 0/0 6.150e8 0.02
+#
+# Station location and elevation from RefTek deployment phase
+Station> MAIO Communal_forest,_Maio 15.23056 -23.17724 91.0 2002/211 0/0
+Channel> LHZ 3 3 5 0.0 0.0 -90.0 1 1.0 0.02 3/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> LHN 3 3 5 0.0 0.0 0.0 1 1.0 0.02 3/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> LHE 3 3 5 0.0 90.0 0.0 1 1.0 0.02 3/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHZ 3 3 5 0.0 0.0 -90.0 1 50.0 0.02 3/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHN 3 3 5 0.0 0.0 0.0 1 50.0 0.02 3/1500. 3/410000.0 0/0 6.150e8 0.02
+Channel> BHE 3 3 5 0.0 90.0 0.0 1 50.0 0.02 3/1500. 3/410000.0 0/0 6.150e8 0.02
+#
+#       Data Management Center
+#
+#DMC> GEOFON_Data_Center_Potsdam
+DMC> U._Bristol_Earth_Sciences
+#
+End

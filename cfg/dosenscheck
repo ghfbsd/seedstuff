@@ -1,0 +1,10 @@
+#Channel> LHZ 6 3 5 0. 0. -90. 1 1. 0.02 4/2975. 4/7.9051e5 1-5/6-9 6.150e8 1.0
+awk 'func abs(x) {if(x>0) return x; else return -x}
+   /Station>/{print $0}
+   /Channel>/{
+      n=split($(12),f,"/"); is=f[2]
+      n=split($(13),f,"/"); ds=f[2]
+      sens=$(15)+0.0
+      calc=is*ds; if (abs(calc-sens)/sens > 1e-4) fl="***"; else fl=""
+      printf "%s\n           %s x %s = %.4e%s\n",$0,is,ds,is*ds,fl
+   }' copy_seed.cfg

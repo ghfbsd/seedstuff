@@ -1,0 +1,25 @@
+MLOC		= ../../mkconf
+include	$(MLOC)/Make.$(OS).FLAGS
+
+MAKEFILE      = Make.$(ARCH).CLib
+
+DEST	      = ../../lib/$(OS)
+
+LIBRARY	      = libC$(OS).a
+
+SRCS	      = C_functions.c \
+		TapeRead.c
+
+OBJS	      = $(DEST)/C_functions.o \
+		$(DEST)/TapeRead.o
+
+update:         $(DEST)/$(LIBRARY)
+
+$(DEST)/$(LIBRARY): $(OBJS)
+	ar ru $(DEST)/$(LIBRARY) $(OBJS)
+
+$(DEST)/C_functions.o: C_functions.c
+	$(CC) $(CCFLAGS) C_functions.c  -o $@
+
+$(DEST)/TapeRead.o: TapeRead.c
+	$(CC) $(CCFLAGS) TapeRead.c  -o $@

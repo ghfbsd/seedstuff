@@ -1,0 +1,83 @@
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Set Enviroment variables for found operating system
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+CONF	= mkconf/Make.ARCH
+RELEASE = `uname -r`
+CC = `cat CC`
+FC = g77
+
+all:
+	@echo "using $(CC) to compile c stuff ..."
+	@echo "Creating SeedStuff for `uname -a` ..."
+	@if [ `uname` = "SunOS" ] ; then  \
+		if [ $(RELEASE) -ge 5 ] ; then  \
+			$(MAKE) Solaris ; \
+		else \
+			$(MAKE) SunOS ; \
+		fi ; \
+	fi 
+	@if [ `uname` = "Linux" ]; then  $(MAKE) Linux; fi
+	@if [ `uname` = "HP-UX" ]; then  $(MAKE) HP-UX; fi
+	@if [ `uname` = "Darwin" ]; then  $(MAKE) Darwin; fi
+	@if [ `uname` = "FreeBSD" ]; then  $(MAKE) FreeBSD; fi
+	@chmod go+rx bin/*/*
+	
+SunOS:
+	@[ -d lib/SunOS4.1.x ] || mkdir lib/SunOS4.1.x
+	@[ -d bin/SunOS4.1.x ] || mkdir bin/SunOS4.1.x
+	@$(MAKE) -f $(CONF) CC=$(CC) FC=$(FC) OS=SunOS4.1.x ARCH=SunOS
+
+Solaris:
+	@[ -d lib/Solaris ] || mkdir lib/Solaris
+	@[ -d bin/Solaris ] || mkdir bin/Solaris
+	@$(MAKE) -f $(CONF) CC=$(CC) FC=$(FC) OS=Solaris ARCH=SunOS
+
+Linux:
+	@[ -d lib/Linux ] || mkdir lib/Linux
+	@[ -d bin/Linux ] || mkdir bin/Linux
+	@$(MAKE) -f $(CONF) CC=$(CC) FC=$(FC) OS=Linux ARCH=Linux
+
+HP-UX:
+	@[ -d lib/HP-UX ] || mkdir lib/HP-UX
+	@[ -d bin/HP-UX ] || mkdir bin/HP-UX
+	@$(MAKE) -f $(CONF) CC=$(CC) FC=$(FC) OS=HP-UX ARCH=HP-UX	
+
+Darwin:
+	@[ -d lib/Darwin ] || mkdir lib/Darwin
+	@[ -d bin/Darwin ] || mkdir bin/Darwin
+	@$(MAKE) -f $(CONF) CC=$(CC) FC=$(FC) OS=Darwin ARCH=macos
+
+FreeBSD:
+	@[ -d lib/FreeBSD ] || mkdir lib/FreeBSD
+	@[ -d bin/FreeBSD ] || mkdir bin/FreeBSD
+	@$(MAKE) -f $(CONF) CC=$(CC) FC=f77 OS=FreeBSD ARCH=FreeBSD
+
+clean:
+	@$(MAKE) -i clean_out_all
+
+clean_out_all:
+	if [ `uname` = "HP-UX" ]; then \
+		/bin/rm  lib/HP-UX/*.[ao] bin/HP-UX/* ; \
+	fi
+	if [ `uname` = "Linux" ]; then /bin/rm  lib/Linux/*.[caoF]; fi
+	if [ `uname` = "Darwin" ]; then /bin/rm  lib/Darwin/*.[cao]; fi
+	if [ `uname` = "SunOS" ] ; then  \
+                if [ $(RELEASE) -ge 5 ] ; then  \
+			/bin/rm  lib/Solaris/*.[ao] ; \
+                else \
+			/bin/rm  lib/SunOS4.1.x/*.[ao] ; \
+                fi ; \
+        fi
+	if [ `uname` = "FreeBSD" ]; then /bin/rm  lib/FreeBSD/*.[cao]; fi
+
+pkg:
+	@echo "Cleaning out all binary and obj files ..."
+	-for i in Linux Solaris SunOS4.1.x Darwin FreeBSD ; do \
+	   /bin/rm -f lib/$$i/* bin/$$i/* ; \
+	done
+	@echo "Creating a tar distribution ..."
+	D=`basename $$PWD` ; (cd ..; tar cvfz /tmp/geofon.tgz $$D)
+
+tar:
+	$(MAKE) -i pkg

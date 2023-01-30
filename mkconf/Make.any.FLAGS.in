@@ -1,0 +1,17 @@
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Compiler flags
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  
+#DBG		= -DDEBUG
+DBG             =
+INCLUDES	= -I../include
+CFLAGS          = $(DBG) @CFLAGS@ @ADD_CFLAGS@ $(INCLUDES) 
+FFLAGS          = $(DBG) @FFLAGS@ @ADD_FFLAGS@ $(INCLUDES) 
+LDFLAGS  	=
+OS		= $(OS)
+LIBS     	= 
+CLOC		= ../src/C
+FLOC		= ../src/Fortran
+TOOLLOC		= ../ToolsLib
+
+	

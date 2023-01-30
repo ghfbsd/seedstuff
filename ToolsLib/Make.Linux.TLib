@@ -1,0 +1,48 @@
+MLOC		= ../mkconf
+include	$(MLOC)/Make.Linux.FLAGS
+
+MAKEFILE      = Make.Linux.TLib
+
+DEST	      = ../lib/$(OS)
+
+LIBRARY	      = libTLinux.a
+
+SRCS	      = FileFind.c \
+		GetSubStr.c \
+		StrMatch.c \
+		StrToLower.c \
+		StrToUpper.c \
+		Substitute.c \
+		avldelete.c \
+		avlfile.c \
+		avlfind.c \
+		avlfree.c \
+		avlinsert.c \
+		avlminmax.c \
+		avlprint.c \
+		avlreplace.c
+
+OBJS	      = $(DEST)/FileFind.o \
+		$(DEST)/GetSubStr.o \
+		$(DEST)/StrMatch.o \
+		$(DEST)/StrToLower.o \
+		$(DEST)/StrToUpper.o \
+		$(DEST)/Substitute.o \
+		$(DEST)/avldelete.o \
+		$(DEST)/avlfile.o \
+		$(DEST)/avlfind.o \
+		$(DEST)/avlfree.o \
+		$(DEST)/avlinsert.o \
+		$(DEST)/avlminmax.o \
+		$(DEST)/avlprint.o \
+		$(DEST)/avlreplace.o
+
+
+$(DEST)/$(LIBRARY):	$(OBJS) 
+		ar cru $(DEST)/$(LIBRARY) $(OBJS)
+		ranlib $(DEST)/$(LIBRARY)
+		
+update:         $(DEST)/$(LIBRARY)
+
+$(DEST)/%.o: %.c
+	$(COMPILE.c) $(CCFLAGS) $< -o $@

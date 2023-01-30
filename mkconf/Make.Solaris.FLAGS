@@ -1,0 +1,18 @@
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Compiler flags
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  
+#DBG		= -DDEBUG -g
+DBG             = 
+INCLUDES	= -I../include
+CCFLAGS         = $(DBG) -DSOLARIS $(INCLUDES)
+FC              = f77
+FFLAGS   	= -e -dalign -DSOLARIS -DF77 $(INCLUDES)
+LDFLAGS  	= -Bstatic
+OS		= Solaris   
+LIBS     	= -lV77
+CLOC		= ../src/C
+FLOC		= ../src/Fortran
+TOOLLOC		= ../ToolsLib
+
+	

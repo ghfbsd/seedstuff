@@ -1,0 +1,26 @@
+DEBUG		=	-g
+CFLAGS		=	$(CCFLAGS) $(DEBUG) $(OUTPUT_OPTION)
+MLOC		= 	../../mkconf
+include	$(MLOC)/Make.macos.FLAGS
+
+DEST		= 	../../lib/$(OS)
+
+LIBRARY		= 	libC$(ARCH).a
+
+SRCS		= 	C_functions.c \
+			TapeRead.c
+
+OBJS		=	$(DEST)/C_functions.o \
+			$(DEST)/TapeRead.o
+
+$(DEST)/$(LIBRARY):	$(OBJS) 
+			ar cru $(DEST)/$(LIBRARY) $(OBJS)
+			ranlib $(DEST)/$(LIBRARY)
+		
+update:         	$(DEST)/$(LIBRARY)
+
+$(DEST)/C_functions.o: C_functions.c
+$(DEST)/TapeRead.o: TapeRead.c
+
+$(OBJS):
+	$(CC) $(CFLAGS) -o $@ -c $?

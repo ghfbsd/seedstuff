@@ -1,0 +1,50 @@
+MLOC		= ../mkconf
+include	$(MLOC)/Make.$(OS).FLAGS
+
+MAKEFILE      = Make.$(ARCH).TLib
+
+DEST	      = ../lib/$(OS)
+
+LIBRARY	      = libT$(OS).a
+
+SRCS	      = FileFind.c \
+		GetSubStr.c \
+		StrMatch.c \
+		StrToLower.c \
+		StrToUpper.c \
+		Substitute.c \
+		avldelete.c \
+		avlfile.c \
+		avlfind.c \
+		avlfree.c \
+		avlinsert.c \
+		avlminmax.c \
+		avlprint.c \
+		avlreplace.c
+
+OBJS	      = $(DEST)/FileFind.o \
+		$(DEST)/GetSubStr.o \
+		$(DEST)/StrMatch.o \
+		$(DEST)/StrToLower.o \
+		$(DEST)/StrToUpper.o \
+		$(DEST)/Substitute.o \
+		$(DEST)/avldelete.o \
+		$(DEST)/avlfile.o \
+		$(DEST)/avlfind.o \
+		$(DEST)/avlfree.o \
+		$(DEST)/avlinsert.o \
+		$(DEST)/avlminmax.o \
+		$(DEST)/avlprint.o \
+		$(DEST)/avlreplace.o
+
+
+$(DEST)/$(LIBRARY):	$(OBJS) 
+		ar cru $(DEST)/$(LIBRARY) $(OBJS)
+		@if [ $(OS) = "SunOS4.1.x" ] ; then \
+			ranlib $(DEST)/$(LIBRARY) ; \
+		fi
+		
+update:         $(DEST)/$(LIBRARY)
+
+$(DEST)/%.o: %.c
+	$(CC) $(CCFLAGS) -c $< -o $@

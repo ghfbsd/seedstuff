@@ -1,0 +1,33 @@
+MLOC		= ../../mkconf
+include	$(MLOC)/Make.$(OS).FLAGS
+
+MAKEFILE      = Make.$(ARCH).FLib
+
+DEST	      = ../../lib/$(OS)
+
+LIBRARY	      = libF$(OS).a
+
+SRCS	      = \
+		cre_seed_head_sub.F \
+		copy_seed_sub.F \
+		read_grf.F \
+		not.vax.functions_c.F 
+
+OBJS	      = \
+		$(DEST)/cre_seed_head_sub.o \
+		$(DEST)/copy_seed_sub.o \
+		$(DEST)/read_grf.o \
+		$(DEST)/not.vax.functions_c.o 
+
+$(DEST)/$(LIBRARY):	$(OBJS) 
+		ar cru $(DEST)/$(LIBRARY) $(OBJS)
+		@if [ $(OS) = "SunOS4.1.x" ] ; then \
+			ranlib $(DEST)/$(LIBRARY) ; \
+		fi
+		
+update:         $(DEST)/$(LIBRARY)
+
+$(DEST)/%.o: %.F
+	$(COMPILE.F) $< -o $@
+
+$(DEST)/cre_seed_head_sub.o $(DEST)/copy_seed_sub.o: ../include/head_seed.inc

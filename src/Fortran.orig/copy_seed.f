@@ -1,0 +1,836 @@
+	program copy_seed
+c
+	implicit integer(a-z)
+	logical lopen
+	integer ibuf(4000),jbuf(4000),numw(300)
+c     &	,kbuf(4000)
+	character stat*5,chan*3,chanw*3,net_id*2,ans*1,sr_stat(100)*5,
+     &	sr_chan(3)*3,sr_comp(3)*1,comp_net(3)*1,ifile*132,ofile*132,
+     &	odir*132,idir*132,cnum*6,chan_typ*1,string*132,seed_lst*132,
+     &	seed_out*132,seed_idx*132,start_string*13,end_string*13,
+     &	net_idw*2,cdum*2,srx_stat*5,srx_chan*3,opt(10)*1,cfg_dir*132,
+     &	opt_string(10)*80,cfgfile*132,stat_sel*5,net_sel*7,
+     &	dummy1*80,dummy2*80,dummy3*80
+	real*4 rate,ratew,dt,dtw,tshft
+	real*8 first_tim,dum_tim,dua_tim,due_tim,new_tim,next_tim,next_timw,
+     &	last_tim,lst_tim,wra_tim,wre_tim,rnd_tim,first_dtim,last_dtim
+c
+	character files(300)*132
+	integer sera_idx(100,100,15),sere_idx(100,100,15),stat_lkup(100),
+     &	no_chan(100),chan_lkup(100,15),nser(100,15),no_rec(300)
+	real rateo(100,15)
+	real*8 spa_tim(100),spe_tim(100),sera_tim(100,100,15),sere_tim
+     &	(100,100,15),vol_anf,vol_end
+c
+	parameter (unit=1,unit1=10,unit2=2,unit3=3,unit4=4,unit5=7,unit6=8)
+	equivalence (ibuf,cnum)
+	logical swap
+c
+	character version*18
+ 	include 'head_seed.inc'
+ 	include 'version.inc'
+	write(*,*) 'copy_seed -',version
+c
+	data idt/4/,iend/0/,nws/0/
+	data ncm_tot,comp_net/3,'Z','N','E'/
+	data ianf/0/
+c
+	swap = byteorder() .eq. 0
+	call getenv('SEED_STUFF_HOME',cfg_dir)
+	ln=lenc(cfg_dir)
+	if(cfg_dir(ln:ln).ne.'/') cfg_dir(ln+1:ln+1)='/'
+	idir='./'
+	odir='../'
+	iall=1
+	imul=1
+	id_short=0
+	ird_shd=0
+	chan_typ='a'
+	idiv=0
+c
+	inarg=rd_options(nopt,opt,opt_string)
+	if(inarg.eq.0) call copy_seed_use
+	inarg=1
+	istat=get_opt('i',idir,nopt,opt,opt_string)
+	ln=lenc(idir)
+	if(idir(ln:ln).ne.'/') idir(ln+1:ln+1)='/'
+	istat=get_opt('o',odir,nopt,opt,opt_string)
+	ln=lenc(odir)
+	if(odir(ln:ln).ne.'/') odir(ln+1:ln+1)='/'
+	istat=get_opt('b',start_string,nopt,opt,opt_string)
+	istat=change_time_string(start_string,itag,mon,iyear,ih,im,is)
+	istat=get_opt('e',end_string,nopt,opt,opt_string)
+	istat=change_time_string(end_string,itagl,monl,iyearl,ihl,iml,isl)
+	istat=get_opt('d',cdum,nopt,opt,opt_string)
+	if(istat.eq.1) idiv=1
+	if(idiv.eq.1) then
+	  ichd=datum(1,idy,iyear,mon,itag)
+	  icha=abstim(1,istim,iyear,idy,ih,im,is)
+	  first_dtim=dble(istim)
+	  ichd=datum(1,idyl,iyearl,monl,itagl)
+	  icha=abstim(1,iltim,iyearl,idyl,ihl,iml,isl)
+	  last_dtim=dble(iltim)
+	  if(iyearl.eq.iyear+1) then
+	    ichd=datum(1,idyn,iyear,12,31)
+	    idyl=idyn+idyl
+	  endif
+	  nday=idyl-idy
+	  if(ihl.gt.0.or.iml.gt.0.or.isl.gt.0) nday=nday+1
+	  itag=itag-1
+	  ihs=ih
+	  ims=im
+	  iss=is
+	  ihls=ihl
+	  imls=iml
+	  isls=isl
+	write(*,*) 'Split option used for',nday,' days'
+	endif
+	istat=get_opt('c',chan_typ,nopt,opt,opt_string)
+	if(istat.eq.1.and.chan_typ.ne.'a') then
+	  iall=0
+	  imul=0
+	endif
+	istat=get_opt('h',cdum,nopt,opt,opt_string)
+	if(istat.eq.1) then
+	  if(cdum(1:1).eq.'a') id_short=1
+	  if(cdum(1:1).eq.'s') ird_shd=1
+	endif
+	istat=get_opt('k',cdum,nopt,opt,opt_string)
+	id_keep=0
+	if(istat.eq.1) id_keep=1
+	istat=get_opt('m',ofile,nopt,opt,opt_string)
+	id_mero=0
+	if(istat.eq.1) then
+	  id_mero=1
+	  goto 8000
+	endif
+c
+	istat=get_opt('l',label,nopt,opt,opt_string)
+	if(label.eq.' ') label='GEOFON_SEED_Volume'
+c
+	net_sel='all'
+	stat_sel='all'
+	istat=get_opt('s',stat_sel,nopt,opt,opt_string)
+	if(istat.eq.1) then
+	  net_sel=' '
+	endif
+	istat=get_opt('n',net_sel,nopt,opt,opt_string)
+	if(istat.eq.1) then
+	  stat_sel=' '
+	endif
+	if(stat_sel.eq.'all'.or.net_sel.eq.'all') then
+	  net_sel=' '
+	  stat_sel=' '
+	endif
+	istat=get_opt('a',cfgfile,nopt,opt,opt_string)
+	if(istat.ne.1) cfgfile=' '
+c
+c	istat=parse_seed_db(11,12,cfgfile,' ',' ')
+	istat=parse_seed_db(11,12,cfgfile,stat_sel,net_sel)
+c
+	write(*,*) 'Network(s) selected:',no_net,' ',(net(i),i=1,no_net)
+	write(*,*) 'Station(s) selected:',nst_tot,' ',(stat_net(i),i=1,nst_tot)
+	if(nst_tot.eq.1) then
+	  net(1)=stat_net(1)
+	endif
+	no_stat=nst_tot
+c
+500	if(idiv.eq.1) then
+	  iday=iday+1
+	  if(iday.eq.1) then
+	    istim=first_dtim
+	    idyl=idy+1
+	    ichd=datum(0,idyl,iyear,monl,itagl)
+	    ihl=0
+	    iml=0
+	    isl=0
+	    icha=abstim(1,iltim,iyearl,idyl,ihl,iml,isl)
+	  elseif(iday.eq.nday) then
+	    istim=last_tim
+	    iltim=last_dtim
+	  else
+	    istim=last_tim
+	    iltim=istim+86400
+	  endif
+	    icha=abstim(0,istim,iyear,idy,ih,im,is)
+	    ichd=datum(0,idy,iyear,mon,itag)
+	    icha=abstim(0,iltim,iyearl,idyl,ihl,iml,isl)
+	    ichd=datum(0,idyl,iyearl,monl,itagl)
+	write(*,*) 'Process day',iday,itag,mon,ih,im,is,itagl,monl,ihl,iml,isl
+	endif
+c	
+	ihead=1
+	jred=0
+	fast=1
+	icp=0
+	chmod=0
+	nfiles=0
+	ndurch=0
+	ishd=1
+c
+100	if(icp.eq.0) then
+          if(itag.gt.0) then
+	    ichd=datum(1,idy,iyear,mon,itag)
+	    icha=abstim(1,istim,iyear,idy,ih,im,is)
+	    first_tim=dble(istim)
+            ichd=datum(1,idyl,iyearl,monl,itagl)
+            icha=abstim(1,iltim,iyearl,idyl,ihl,iml,isl)
+	    last_tim=dble(iltim)
+c	      string='all'
+c	    lf=lenc(string)
+c	    if(string.eq.' '.or.string(1:3).eq.'ALL'.or.string(1:3).eq.'all')
+c     &	    then
+cc	      no_stat=nst_tot
+cc	      do n=1,no_stat
+	      no_stat=0
+	      do n=1,nst_tot
+c	      write(*,*) 'n',n,stat_net(n),stat_end_tim(n)
+	        if(stat_net(n)(1:1).ne.' '.and.stat_end_tim(n).eq.'0/0') then
+	          no_stat=no_stat+1
+	          sr_stat(no_stat)=stat_net(n)
+c		  write(*,*) 'sr',no_stat,sr_stat(no_stat)
+	        endif
+	      enddo
+c	    else
+c	      istat=parse_string(string,no_stat,sr_stat)
+c	    endif
+c	      string='all'
+c	    lf=lenc(string)
+c	    if(string.eq.' '.or.string(1:3).eq.'ALL'.or.string(1:3).eq.'all')
+c     &	    then
+	      no_comp=ncm_tot
+	      do n=1,no_comp
+	        sr_comp(n)=comp_net(n)
+	      enddo
+c	    else
+c	      istat=parse_string(string,no_comp,sr_comp)
+c	    endif
+c
+	    if(iall.eq.1.or.chan_typ.eq.'A'.or.chan_typ.eq.'a') then
+	      iall=1
+	      ndurch=ndurch+1
+	      if(ndurch.eq.1) chan_typ='H'
+	      if(ndurch.eq.2) chan_typ='B'
+	      if(ndurch.eq.3) chan_typ='L'
+	      if(ndurch.eq.4) chan_typ='V'
+	      nend=4
+	    endif
+	    if(chan_typ.eq.'h') chan_typ='H'
+	    if(chan_typ.eq.'e') chan_typ='E'
+	    if(chan_typ.eq.'s') chan_typ='S'
+	    if(chan_typ.eq.'b') chan_typ='B'
+	    if(chan_typ.eq.'m') chan_typ='M'
+	    if(chan_typ.eq.'l') chan_typ='L'
+	    if(chan_typ.eq.'v') chan_typ='V'
+	    if(chan_typ.eq.'u') chan_typ='U'
+	    if(chan_typ.eq.' ') chan_typ='B'
+	    if(chan_typ.ne.'E'.and.chan_typ.ne.'S'.and.chan_typ.ne.'H'.and.
+     &	    chan_typ.ne.'B'.and.chan_typ.ne.'L'.and.chan_typ.ne.'V'.and.
+     &	    chan_typ.ne.'U'.and.chan_typ.ne.'M') then
+	      write(*,*) 'No correct channel type defined'
+	      stop
+	    endif
+	    write(*,*) 'Lookup for data for channel ',chan_typ
+c
+	    do n=1,no_comp
+	      sr_chan(n)=chan_typ//'H'//sr_comp(n)
+	    enddo
+c
+	  else
+	    stop
+	  endif
+c
+	  if(iall.eq.1.and.ndurch.ne.nend) then
+	    more=1
+	  else
+	    more=0
+	  endif
+c	else
+c
+c	  ichk=get_next_event(unit6,nst_tot,stat_net,no_stat,sr_stat,no_comp,
+c     &	  sr_chan,chan_typ,first_tim,last_tim,jred,more)
+c	  istim=first_tim+0.5
+c	  icha=abstim(0,istim,iyear,idy,ih,im,is)
+c	  ichd=datum(0,idy,iyear,mon,itag)
+c
+	endif
+c
+c	write(*,*) no_stat,sr_stat(1),no_comp,sr_chan(1),chan_typ,first_tim,
+c     &	last_tim,jred,more
+	if(jred.eq.1) fast=0
+	imode=0
+	nfil_sg=0
+	nch=0
+	if(imul.ne.1) chmod=0
+c
+c200	write(*,*) '200:',imode,first_tim,last_tim,chan_typ
+200	istat=open_next(imode,unit,idir,first_tim,last_tim,chan_typ,ifile,
+     &	nlgfl)
+c	write(*,*) 'openn',istat,ifile,nlgfl
+	if(istat.eq.1) then
+	  imode=2
+	  goto 200
+	endif
+	if(istat.ne.0) goto 900
+	ichk=check_infile(ifile,no_stat,sr_stat,no_comp,sr_chan,istn,ichn)
+c	write(*,*) 'check_file',ichk,no_stat,no_comp,istn,ichn,sr_chan
+	if(ichk.gt.0) goto 200
+c
+	if(chmod.eq.999) chmod=2
+	irec=0
+	istat=0
+	nch=nch+1
+	if(icp.lt.1) then
+	  srx_stat=sr_stat(istn)
+	  srx_chan=sr_chan(ichn)
+	  istat=sr_start(unit,unit2,1,0,irew,nskip,nlgfl,irec,istim,
+     &	  srx_stat,srx_chan,iftim,iftsc,stat,chan,net_id,ismp_st,
+     &	  neof,lst_tim,jred,ibuf)
+c	write(*,*) 'sr_start',istat,iftim,iftsc,stat,chan,ismp_st
+c
+	  if(istat.eq.1) then
+	    imode=1
+	    goto 200
+	  endif
+c
+	  if(istat.eq.2) goto 900
+	  new_tim=dble(iftim)+dble(iftsc)*0.0001
+c	  write(*,*) 'comp',new_tim,first_tim,last_tim
+	  if(new_tim.lt.first_tim.or.new_tim.gt.last_tim) goto 200
+	endif
+c	if(icp.eq.1) then
+c	  istat=0
+c	  last_tim=1.e20
+c	elseif(icp.eq.-1) then
+c	  last_tim=lst_tim
+c	endif
+	next_tim=0.
+	numw(nch)=0
+	dt=0.0
+c
+1000	if(istat.eq.0) then
+	  nrec=0
+	  num=0
+	  iftim=0
+	  nsmpt=0
+	  nsmptr=0
+c
+c1010	  do while (istat.eq.0.and.last_tim-next_tim.gt.0.5*dt)
+1010	  do while (istat.eq.0.and.last_tim-next_tim.gt.dt)
+	    irec=irec+1
+	    istat=read_rec_fil('QT',1,unit,1024,nlgfl,ibuf,irec,num,stat,
+     &	    chan,net_id,iftim,iftsc,timcr,rate,nsamp,iof,nframe)
+c	write(*,*) istat,irec,num,stat,chan,net_id,iftim,iftsc,timcr,rate,nsamp
+	    if(istat.eq.4.or.istat.eq.2) iend=1
+	    if(istat.eq.0) then
+	      idnxt=0
+	      nsmpt=nsmpt+nsamp
+	      nrec=nrec+1
+	      dum_tim=new_tim
+	      new_tim=dble(iftim)+dble(iftsc+timcr)*0.0001
+c	      if(dum_tim.eq.new_tim) then
+c	        write(*,*) 'Double data record - skip',irec,nrec,new_tim
+c	        goto 1010
+c	      endif
+	      if(nrec.eq.1) then
+	        nfil=nfil+1
+	        if(nfil.eq.1) then
+	          do n=1,nst_tot
+	            if(stat_net(n)(1:lenc(stat_net(n))).eq.stat
+     &	            (1:lenc(stat))) ist=n
+	          enddo
+	          inet=get_netlkp(ist,no_net,nst_net)
+	          net_idw=net_code(inet)
+	        endif
+c	write(*,*) 'net ',ist,inet,net(inet),net_code(inet)
+	        dt=1./rate
+	        ldat=1024-iof
+	        if(icp.lt.1) istart=1
+	        icha=abstim(0,iftim,iyrf,idyf,ihf,imf,isf)
+                ichd=datum(0,idyf,iyrf,monf,itgf)
+	        write(*,9) 'Start of input volume:',
+     &	        stat,chan,rate,itgf,monf,iyrf,ihf,imf,isf,iftsc
+9	format(3(1x,a),f5.1,1x,2(i2.2,1h/),i4.4,2x,2(i2.2,1h:),i2.2,1h.,i4.4)
+	        if(jred.eq.1.and.rate.gt.20.) then
+	          ratew=rate/float(idt)
+	          dtw=1./ratew
+	          chanw='BH'//chan(3:3)
+	          ired=1
+	        else
+	          ratew=rate
+	          dtw=1./ratew
+	          chanw=chan
+	          ired=0
+	        endif
+	        dum_tim=new_tim+(ismp_st-1)*dt
+	        dum_tim=rnd_tim(0,dum_tim,dtw,tcor_st)
+	        icht=tfix(dum_tim,iftim,iftsc)
+	        icha=abstim(0,iftim,iyrf,idyf,ihf,imf,isf)
+	        ichd=datum(0,idyf,iyrf,monf,itgf)
+	        if(ihf.eq.0.and.imf.eq.0.and.isf.eq.0.and.iftsc.eq.0) then
+	          write(ofile,'(2a,3i2.2,1h.,a)') odir(1:lenc(odir)),
+     &	          stat(1:lenc(stat)),cyear(iyrf),monf,itgf,chanw
+	        else
+	          write(ofile,'(2a,6i2.2,1h.,a)') odir(1:lenc(odir)),
+     &	          stat(1:lenc(stat)),cyear(iyrf),monf,itgf,ihf,imf,isf,
+     &	          chanw
+	        endif
+c	        open(unit1+nch,name=ofile,status='unknown',form='unformatted',
+c     &	        recl=1024)
+c	        new_recl = 1024 ! only with out the -xl flag (1024*4)
+	        new_recl = 4096 ! only with out the -xl flag (1024*4)
+	        open(unit1,name=ofile,status='unknown',recl=new_recl,
+     &	        access='direct',form='unformatted')
+	        nfiles=nfiles+1
+	        nfil_sg=nfil_sg+1
+	        if(ihead.eq.1) files(nfil_sg)=ofile
+	      else
+	        istart=0
+	        ismp_st=1
+c	        write(*,*) new_tim,next_tim,dt
+	        if(abs(new_tim-next_tim).gt.0.99*dt) then
+	          icha=abstim(0,iftim,iyrf,idyf,ihf,imf,isf)
+                  ichd=datum(0,idyf,iyrf,monf,itgf)
+	          itch=tfix(next_tim,intim,intsc)
+	          icha=abstim(0,intim,iyrn,idyn,ihn,imn,isn)
+	          ichd=datum(0,idyn,iyrn,monn,itgn)
+	          if(ihead.ne.1)
+c     &	          write(*,'(2(1x,a,2x,2(i2.2,1h/),i4.4,2x,2(i2.2,1h:),
+c     &	          i2.2,1h.,i4.4))') 
+     &	          write(*,19)
+     &	          'Time-gap in input file: ',itgf,monf,iyrf,ihf,imf,isf,
+     &	          iftsc,'instead of',itgn,monn,iyrn,ihn,imn,isn,intsc
+19	format(2(1x,a,2x,2(i2.2,1h/),i4.4,2x,2(i2.2,1h:),i2.2,1h.,i4.4))
+c	          if(ired.eq.1) then
+c	            irchk=red4_dat(999,nrec,dt,0,jbuf,isamp,kbuf,tshft)
+c	            nsmptr=nsmptr+isamp
+c	            if(isamp.gt.0) then
+c	              wra_tim=next_tim+tshft
+c	              iwchk=wr_seed(1,unit1,nch,stat,chanw,net_idw,nrec,
+c     &	              ratew,wra_tim,nws,isamp,1,kbuf,numw,chmod,
+c     &	              nst,stat_lkup,no_chan,chan_lkup,rateo,vol_anf,
+c     &	              vol_end,nspn,spa_tim,spe_tim,nser,sera_tim,
+c     &	              sere_tim,sera_idx,sere_idx)
+c	            endif
+c	          endif
+	        endif
+	      endif
+	      next_tim=new_tim+nsamp*dt
+c	      if(last_tim-new_tim.gt.0.5*dt) then
+	      if(last_tim-new_tim.gt.dt) then
+	        ifchk=istat
+	        if(fast.eq.0.or.
+     &	         ((nrec.eq.1).or.(last_tim-next_tim.lt.dt))) then
+c     &	         ((nrec.eq.1).or.(last_tim-next_tim.lt.0.5*dt))) then
+c	          if(DEC) ischk=i4swap(ldat,ibuf(iof+1),ibuf(iof+1))
+	          idchk=decomp_steim(10,1,ifchk,nrec,nframe,nsamp,ibuf(iof+1),
+     &	          ni_dat,jbuf,last_val)
+c	write(*,*) 'cps: decomp',nrec,nsamp,ni_dat,(jbuf(i),i=1,25)
+	        endif
+	        if(istart.eq.1) then
+c	write(*,*) 'istart 1:',ismp_st,nsamp,ni_dat,new_tim
+	          if(ismp_st.eq.2.and.fast.eq.1) then
+	            write(*,*) 'Start index corrected to 1 in first record'
+	            ismp_st=1
+	          endif
+	          nsamp=nsamp-ismp_st+1
+	          nsmpt=nsmpt-ismp_st+1
+	          new_tim=new_tim+(ismp_st-1)*dt
+	          ia=ismp_st
+	          ni_dat=ni_dat-ismp_st+1
+c	write(*,*) 'istart 2:',ia,nsamp,ismp_st,ni_dat,new_tim
+	        else
+	          ia=1
+	        endif
+	        if(fast.eq.0) then
+c	          if(ired.eq.1) then
+c	            irchk=red4_dat(1,nrec,dt,ni_dat,jbuf(ismp_st),isamp,ibuf,
+c     &	            tshft)
+c	            nsmptr=nsmptr+isamp
+c	          else
+	            nn=ia-1
+	            do n=1,ni_dat
+	              nn=nn+1
+	              ibuf(n)=jbuf(nn)
+	            enddo
+	            isamp=ni_dat
+c	          endif
+	        else
+	          isamp=nsamp
+	        endif
+	        wra_tim=new_tim+tshft
+	        dua_tim=rnd_tim(0,wra_tim,dtw,tcor_st)
+	        wre_tim=wra_tim+(isamp-1)*dtw
+	        due_tim=rnd_tim(0,wre_tim,dtw,tcor_st)
+c	write(*,*) nrec,new_tim,wra_tim,isamp,wre_tim
+c	        if(icp.lt.1.and.last_tim-next_tim.lt.0.5*dt) then
+	        if(icp.lt.1.and.last_tim-next_tim.lt.dt) then
+	          ismp=isamp
+	          isamp=idint((last_tim-wra_tim)/dtw+0.01)
+	          dum_tim=wra_tim+(isamp-1)*dtw
+c	          dum_tim=rnd_tim(0,dum_tim,dtw,tcor_st)
+c	write(*,*) wra_tim,new_tim,tshft,wre_tim,isamp,dt,dtw,dum_tim,tcor_st,last_tim
+c	          if(last_tim-dum_tim.gt.dtw*0.5) isamp=isamp+1
+	          if(last_tim-dum_tim.ge.dtw) isamp=isamp+1
+	          if(isamp.gt.nsamp) isamp=nsamp
+c	write(*,*) 'end-check',isamp,ismp,last_tim,next_tim,wra_tim
+	        endif
+	        if(fast.eq.0) then
+c	          iwchk=wr_seed(1,unit1,nch,stat,chanw,net_idw,nrec,ratew,
+c     &	          wra_tim,nws,isamp,1,ibuf,numw,chmod,
+c     &	          nst,stat_lkup,no_chan,chan_lkup,rateo,vol_anf,
+c     &	          vol_end,nspn,spa_tim,spe_tim,nser,sera_tim,
+c     &	          sere_tim,sera_idx,sere_idx)
+c	write(*,*) 'wr-seed',nrec,numw(nch),isamp,ichwk
+
+	        else
+
+c	write(*,*) 'corr_tim1:',wra_tim,timcr,drift,ntsm,dtw,numw(nch),stat,chanw,
+c     &	iof,isamp
+	          ichk=corr_tim(wra_tim,timcr,dtw,numw(nch),stat,chanw,net_idw,
+     &	          iof,isamp,10,12,ibuf)
+c	if(isamp.eq.0)
+c     &	write(*,*) 'corr_tim2:',wra_tim,timcr,drift,ntsm,dtw,numw(nch),stat
+c     &	,chanw,iof,isamp
+	          wre_tim=wra_tim+(isamp-1)*dtw
+c                  if(nrec.eq.1.or.last_tim-next_tim.lt.0.5*dt) then
+                  if(nrec.eq.1.or.last_tim-next_tim.lt.dt) then
+	            if(nrec.eq.1) then
+	              ia=ismp_st
+	              isamp=nsamp
+	              ndat=0
+	              mdat=0
+	              if(timcr.lt.0) then
+	                itch=tfix(wra_tim-dtw,iftim,iftsc)
+	              else
+	                itch=tfix(wra_tim,iftim,iftsc)
+	              endif
+	              icha=abstim(0,iftim,iyrf,idyf,ihf,imf,isf)
+	              ichd=datum(0,idyf,iyrf,monf,itgf)
+	              write(*,29) 'Start of first output record:',
+     &	              itgf,monf,iyrf,ihf,imf,isf,iftsc,timcr
+29	format(1x,a,9x,2(i2.2,1h/),i4.4,2x,2(i2.2,1h:),i2.2,1h.,i4.4,i5)
+c	            elseif(last_tim-next_tim.lt.0.5*dt) then
+	            elseif(last_tim-next_tim.lt.dt) then
+	              ia=1
+	              if(timcr.lt.0) then
+	                itch=tfix(wre_tim,ietim,ietsc)
+	              else
+	                itch=tfix(wre_tim+dtw,ietim,ietsc)
+	              endif
+	              icha=abstim(0,ietim,iyre,idye,ihe,ime,ise)
+	              ichd=datum(0,idye,iyre,mone,itge)
+	              write(*,29) '   End of last output record:',
+     &	              itge,mone,iyre,ihe,ime,ise,ietsc,timcr
+	            else
+	              write(*,*) 'Error: copy start and end in same record'
+	            endif
+	            mode=0
+	            icmp=compress_steim(mode,1,nrec,isamp,jbuf(ia),iof,
+     &	            1024,ndat,mdat,ist_out,ibuf,totsmp,totsmp_1)
+c	write(*,*) 'compress cps:',mode,nrec,isamp,ndat,mdat,totsmp,totsmp_1
+	            if(ndat.lt.1024.or.(ndat.eq.1024.and.totsmp_1.lt.
+     &	            totsmp)) then
+	              icmp=compress_steim(999,1,nrec,0,jbuf(ia),iof,
+     &	              1024,ndat,mdat,ist_out,ibuf,totsmp,totsmp_1)
+	            elseif(ndat.gt.1024) then
+	              write(*,*) 'Compress error: too much data',nrec,ia,
+     &	              isamp,ndat,mdat,icmp,icdf,iftim,iftsc,timcr
+	            endif
+c	            if(DEC) ischk=i4swap(ldat,ibuf(iof+1),ibuf(iof+1))
+	            itch=tfix(wra_tim,iftim,iftsc)
+	            icdf=def_fixhead(numw(nch),stat,chanw,net_idw,dtw,iof*4,
+     &	            iftim,iftsc,timcr,mdat,10,12,ibuf)
+	            if(mdat.eq.0) then
+	              write(*,*) 'Compress error: zero counter',nrec,ia,
+     &	              isamp,ndat,mdat,icmp,icdf,iftim,iftsc,timcr
+	            endif
+	          endif
+	          numw(nch)=numw(nch)+1
+	          write(cnum,'(i6.6)') numw(nch)
+c
+	          if(irec.eq.1.and.nrec.gt.1) ichk=del_overlap(unit1,
+     &	          irec,wra_tim,next_timw,dtw,isamp)
+c
+	          ichk=uncorr_tim(ibuf,net_idw)
+	          if (swap) ichk=swap_mseed(-1,ibuf)
+c
+	          next_timw=wre_tim+dtw
+	          write(unit1,rec=numw(nch)) (ibuf(i),i=1,1024)
+c	write(*,*) 'written',numw(nch),nsamp,(ibuf(i),i=100,110),nst,wra_tim,timcr
+	          if(ihead.eq.1) then
+c	write(*,*) 'check_rec 1:',chmod,nch,nfiles,numw(nch),nst,timcr,nser(1,nch),nrec
+	            ichk=check_rec(chmod,nfiles,numw(nch),stat,chanw,ratew,
+     &	            isamp,wra_tim,timcr,nst,stat_lkup,no_chan,
+     &	            chan_lkup,rateo,vol_anf,vol_end,nspn,spa_tim,
+     &	            spe_tim,nser,sera_tim,sere_tim,sera_idx,sere_idx)
+c	write(*,*) 'check_rec 1 end:',chmod,nch,nfiles,numw(nch),nst,timcr
+c	write(*,*) 'check_end',nch,nst,stat_lkup(nst),no_chan(nst),chan_lkup(nst,
+c     &	no_chan(nst)),nspn,nser(nch)
+	          endif
+	        endif
+	      endif
+	    endif
+	    if(istat.eq.3) istat=0
+	  enddo
+	  if(istat.eq.1) then
+	    imode=1
+	    istat=open_next(imode,unit,idir,next_tim,last_tim,chan_typ,ifile,
+     &	    nlgfl)
+	    if(istat.eq.0) then
+	      irec=0
+	      goto 1010
+	    endif
+	  endif
+c	  nrec=nrec+1
+	  if(nrec.gt.1) nrec=nrec+1
+c	write(*,*) 'enddo',istat,nrec,ired
+c
+c	  if(istat.ne.5.and.nrec.gt.1) then
+	  if(istat.ne.5) then
+	    if(icp.eq.0) then
+c	      if((more.eq.1.and.imul.eq.0).or.more.eq.0) chmod=999
+	chmod=999
+	    endif
+c
+	    if(fast.eq.0) then
+c	      if(ired.eq.1) then
+c	        irchk=red4_dat(999,nrec,dt,0,jbuf,isamp,ibuf,tshft)
+c	        nsmptr=nsmptr+isamp
+c	write(*,*) 'red_dat:',isamp
+c	      else
+	        isamp=0
+c	      endif
+	      wra_tim=new_tim+tshft
+c	write(*,*) 'call wr_seed',nws,isamp,wra_tim,nrec,numw(nch)
+c	      iwchk=wr_seed(999,unit1,nch,stat,net_idw,chanw,nrec,ratew,
+c     &	      wra_tim,nws,isamp,1,ibuf,numw,chmod,
+c     &	      nst,stat_lkup,no_chan,chan_lkup,rateo,vol_anf,
+c     &	      vol_end,nspn,spa_tim,spe_tim,nser,sera_tim,
+c     &	      sere_tim,sera_idx,sere_idx)
+c	write(*,*) 'end wr_seed',nws,isamp,wra_tim,nrec,numw(nch),iwchk
+	    endif
+c
+	    itch=tfix(next_tim,iftim,iftsc)
+	    icha=abstim(0,iftim,iyrf,idyf,ihf,imf,isf)
+	    ichd=datum(0,idyf,iyrf,monf,itgf)
+	    write(*,39) '  End of input volume:',
+     &	    stat,chan,rate,itgf,monf,iyrf,ihf,imf,isf,iftsc,istat
+39	format(3(1x,a),f5.1,1x,2(i2.2,1h/),i4.4,2x,2(i2.2,1h:),i2.2,1h.,i4.4,i4/)
+	    leno=lenc(ofile)
+	    write(*,'(1x,i5,2a)') numw(nch),' records written on file ',
+     &	    ofile(1:leno)
+	    write(*,*)
+	    close(unit1)
+	    if(ihead.eq.1.and.chmod.eq.999) then
+	      no_rec(nfiles)=numw(nch)
+c	write(*,*) 'check_rec 2:',chmod,numw(nch),nrec,istat,wra_tim,timcr,isamp
+	      ichk=check_rec(chmod,nfiles,numw(nch),stat,chanw,ratew,isamp,
+     &	      wra_tim,timcr,nst,stat_lkup,no_chan,chan_lkup,rateo,
+     &	      vol_anf,vol_end,nspn,spa_tim,spe_tim,nser,sera_tim,
+     &	      sere_tim,sera_idx,sere_idx)
+	    endif
+	  endif
+	endif
+	istat=0
+	goto 200
+c
+900	if(ihead.eq.1) then
+	  if(idsr.eq.1) then
+	    inquire(unit5,opened=lopen)
+	    if(imul.eq.0.or..not.lopen) then
+	      if(ih.eq.0.and.im.eq.0.and.is.eq.0) then
+	        write(ofile,'(2a,3i2.2,a)') odir(1:lenc(odir)),
+     &	        net(inet)(1:lenc(net(inet))),cyear(iyear),mon,itag,'.DSC'
+	      else
+	        write(ofile,'(2a,6i2.2,a)') odir(1:lenc(odir)),
+     &	        net(inet)(1:lenc(net(inet))),cyear(iyear),mon,itag,ih,im,is,
+     &	        '.DSC'
+	      endif
+c
+	      if(.not.lopen)
+     &	      open(unit5,name=ofile,status='unknown')
+	    endif
+c
+	    if(imul.eq.0) then
+c	      istat=cre_head_dsc(unit5,vol_anf,vol_end,nst,stat_lkup,
+c     &	      no_chan,chan_lkup,rateo,nspn,spa_tim,spe_tim,nser,sera_tim,
+c     &	      sera_idx,sere_tim,sere_idx,nfiles,files,no_rec)
+	      close(unit5)
+	    endif
+	  endif
+	  if(ishd.eq.1.and.nfil.gt.0) then
+	    inquire(unit3,opened=lopen)
+	    if(imul.eq.0.or..not.lopen) then
+	      if(ih.eq.0.and.im.eq.0.and.is.eq.0) then
+	        write(ofile,'(2a,3i2.2,a)') odir(1:lenc(odir)),
+     &	        net(inet)(1:lenc(net(inet))),cyear(iyear),mon,itag,'.LST'
+	      else
+	        write(ofile,'(2a,6i2.2,a)') odir(1:lenc(odir)),
+     &	        net(inet)(1:lenc(net(inet))),cyear(iyear),mon,itag,
+     &	        ih,im,is,'.LST'
+	      endif
+	      seed_lst=ofile
+	      seed_out=ofile(1:index(ofile,'.LST'))//'SEED'
+	      seed_idx=ofile(1:index(ofile,'.LST'))//'IDX'
+c	write(*,*) imul,lopen,ofile,seed_lst,seed_out,seed_idx
+c
+	      if(.not.lopen)
+     &	      open(unit3,name=ofile,status='unknown')
+c
+	      if(ih.eq.0.and.im.eq.0.and.is.eq.0) then
+	        write(ofile,'(2a,3i2.2,a)') odir(1:lenc(odir)),
+     &	        net(inet)(1:lenc(net(inet))),cyear(iyear),mon,itag,'.SHD'
+	      else
+	        write(ofile,'(2a,6i2.2,a)') odir(1:lenc(odir)),
+     &	        net(inet)(1:lenc(net(inet))),cyear(iyear),mon,itag,
+     &	        ih,im,is,'.SHD'
+	      endif
+c
+	      inquire(unit4,opened=lopen)
+	      if(.not.lopen) then
+c     &	      open(unit4,name=ofile,status='unknown',form=
+c     &	      'unformatted',recl=1024)
+c	        open(unit4,name=ofile,status='unknown',access='direct',form=
+c     &	        'unformatted',recl=4096)
+c     &	      'unformatted',recl=1024)
+	        open(unit4,name=ofile,status='unknown')
+	      endif
+c	      
+cc	      nfiln=lenc(ofile)
+cc	      write(unit3,'(a)') ofile(1:nfiln)
+	    endif
+c
+	    if(imul.eq.0) then
+c	      istat=change_idx(nser,sera_idx,sere_idx,nst,stat_lkup,no_chan,
+c     &	      chan_lkup)
+	      istat=cre_head_seed(vol_anf,vol_end,nst,
+     &	      stat_lkup,no_chan,chan_lkup,rateo,nspn,spa_tim,spe_tim,
+     &	      nser,sera_tim,sera_idx,sere_tim,sere_idx,id_short,'N',
+     &	      ird_shd,unit5,unit4,unit6,odir,cfg_dir)
+	      close(unit4)
+	    endif
+c
+c	write(*,*) nfiles,nfil_sg,unit3
+	    do n=1,nfil_sg
+	      inquire(unit3,opened=lopen)
+c	write(*,*) n,files(n),lopen
+	      nfiln=lenc(files(n))
+	      write(unit3,'(a)') files(n)(1:nfiln)
+	    enddo
+	    if(imul.eq.0) close(unit3)
+	  endif
+	endif
+c
+	if(more.eq.1) goto 100
+c
+	if(idsr.eq.1.and.imul.eq.1) then
+c	  istat=cre_head_dsc(unit5,vol_anf,vol_end,nst,stat_lkup,
+c     &	  no_chan,chan_lkup,rateo,nspn,spa_tim,spe_tim,nser,sera_tim,
+c     &	  sera_idx,sere_tim,sere_idx,nfiles,files,no_rec)
+	  close(unit5)
+	endif
+	if(ishd.eq.1.and.imul.eq.1) then
+c	  istat=change_idx(nser,sera_idx,sere_idx,nst,stat_lkup,no_chan,
+c     &	  chan_lkup)
+	  istat=cre_head_seed(vol_anf,vol_end,nst,stat_lkup,
+     &	  no_chan,chan_lkup,rateo,nspn,spa_tim,spe_tim,nser,sera_tim,
+     &	  sera_idx,sere_tim,sere_idx,id_short,'N',ird_shd,unit5,unit4,
+     &	  unit6,odir,cfg_dir)
+	  close(unit3)
+cc	  close(unit4)
+	endif
+c
+	if(ishd.eq.1) then
+c	
+	if(id_keep.eq.1) then
+	  open(unit1,name=seed_idx,status='unknown')
+	  write(unit1,*) 'vol',vol_anf,vol_end,' nst',nst
+	  do i=1,nst
+	    n=stat_lkup(i)
+	    write(unit1,*) i,' stat_lkup',stat_lkup(i),' no_chan',no_chan(n)
+	    do j=1,no_chan(n)
+	      m=chan_lkup(n,j)
+	      write(unit1,*) n,j,' chan_lkup',chan_lkup(n,j),' rateo',rateo(n,m),' nser',nser(n,m)
+	      do k=1,nser(n,m)
+	        write(unit1,*) k,n,m,' series',sera_idx(k,n,m),sera_tim(k,n,m),
+     &	        sere_idx(k,n,m),sere_tim(k,n,m)
+	      enddo
+	    enddo
+	  enddo
+	  write(unit1,*) 'nspn',nspn
+	  do i=1,nspn
+	    write(unit1,*) i,' span',spa_tim(i),spe_tim(i)
+	  enddo
+	  write(unit1,*) 'id_short',id_short
+	  close(unit1)
+	endif
+c
+8000	if(id_mero.eq.1) then
+	  seed_lst=ofile(1:lenc(ofile))
+	  seed_out=ofile(1:index(ofile,'.LST'))//'SEED'
+	  seed_idx=ofile(1:index(ofile,'.LST'))//'IDX'
+	  open(unit1,name=seed_idx,status='old')
+	  read(unit1,*) cdum,vol_anf,vol_end,cdum,nst
+	  do i=1,nst
+	    n=stat_lkup(i)
+	    read(unit1,*) ii,cdum,stat_lkup(i),cdum,no_chan(n)
+	    do j=1,no_chan(n)
+	      m=chan_lkup(n,j)
+	      read(unit1,*) n,jj,cdum,chan_lkup(n,j),cdum,rateo(n,m),cdum,nser(n,m)
+	      do k=1,nser(n,m)
+	        read(unit1,*) kk,n,m,cdum,sera_idx(k,n,m),sera_tim(k,n,m),
+     &	        sere_idx(k,n,m),sere_tim(k,n,m)
+	      enddo
+	    enddo
+	  enddo
+	  read(unit1,*) cdum,nspn
+	  do i=1,nspn
+	    read(unit1,*) ii,cdum,spa_tim(i),spe_tim(i)
+	  enddo
+	  read(unit1,*) cdum,id_short
+	  close(unit1)
+	endif
+c	
+9000	  istat=merge_seed(unit3,unit4,unit5,seed_lst,seed_out,id_keep)
+	endif
+c
+	if(idiv.eq.1.and.iday.lt.nday) goto 500
+c
+c	istat=ieee_flags('clearall',dummy1,dummy2,dummy3)
+	end
+	subroutine copy_seed_use
+c
+	write(*,*) 'Extracts and assembles MiniSEED data to FullSEED
+     & files'
+	write(*,*) 'Usage:'
+	write(*,*) 'copy_seed -b <start_time> -e <end_time>
+     & -[a,b,e,h,i,l,o,s]'
+	write(*,*) 'A database file copy_seed.cfg has to be present in
+     & $SEED_STUFF_HOME or'
+	write(*,*) '  -a <filename> - alternate database file'
+	write(*,*) '  -b <yymmdd_hhmmss> - start time'
+	write(*,*) '  -c <code> - channel code (def a)'
+	write(*,*) '             h : VSP (HH?, 80 Hz)'
+	write(*,*) '             m : MP  (MH?, 40 Hz)'
+	write(*,*) '             b : VBB (BH?, 20 Hz)'
+	write(*,*) '             l : LP  (LH?, 1 Hz)'
+	write(*,*) '             v : VLP (VH?, 0.1 Hz)'
+	write(*,*) '             u : ULP (UH?, 0.01 Hz)'
+	write(*,*) '             a : all (BH?+LH?+VH?)'
+	write(*,*) '  -d - separation in day SEED volumes'
+	write(*,*) '  -e <yymmdd_hhmmss> - end time'
+	write(*,*) '  -h <code> - header code'
+	write(*,*) '             f : full SEED header (def)'
+	write(*,*) '             a : abbreviated header (no FIR filters)'
+	write(*,*) '             s : use stored header (in $SEED_STUFF_HOME)'
+	write(*,*) '  -i <idir> - indir  (def=./)'
+	write(*,*) '  -k - keep meta files and header DB (def: no)'
+	write(*,*) '  -l <label> - volume label'
+	write(*,*) '  -n <netcode> - select one network only'
+	write(*,*) '  -m <mergefile> - merge only, file list from <mergefile>'
+	write(*,*) '  -o <odir> - outdir  (def=../)'
+	write(*,*) '  -s <statcode> - select one station only'
+c
+	stop
+	end

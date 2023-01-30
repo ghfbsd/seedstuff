@@ -1,0 +1,24 @@
+DEBUG		=	-g
+MLOC		= 	../../mkconf
+include	$(MLOC)/Make.Linux.FLAGS
+
+DEST		= 	../../lib/$(OS)
+
+LIBRARY		= 	libCLinux.a
+
+SRCS		= 	C_functions.c \
+			TapeRead.c
+
+OBJS		=	$(DEST)/C_functions.o \
+			$(DEST)/TapeRead.o
+
+
+$(DEST)/$(LIBRARY):	$(OBJS) 
+			ar cru $(DEST)/$(LIBRARY) $(OBJS)
+			ranlib $(DEST)/$(LIBRARY)
+		
+update:         	$(DEST)/$(LIBRARY)
+
+
+$(DEST)/%.o: %.c
+	$(CC) $(CCFLAGS) $(DEBUG) -c $< $(OUTPUT_OPTION)

@@ -1,0 +1,17 @@
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Compiler flags
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  
+#DBG		= -DDEBUG
+DBG             = -gdwarf-2
+INCLUDES	= -I../include
+CFLAGS          = $(DBG) -g -O2  -DREFTEK -DLINUX -DHAVE_QUEUE -DSTDC_HEADERS $(INCLUDES) 
+FFLAGS          = $(DBG)      $(INCLUDES) 
+LDFLAGS  	= -gdwarf-2
+OS		= $(OS)
+LIBS     	= 
+CLOC		= ../src/C
+FLOC		= ../src/Fortran
+TOOLLOC		= ../ToolsLib
+
+	

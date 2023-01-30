@@ -1,0 +1,17 @@
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Compiler flags
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  
+#DBG		= -DDEBUG -g
+DBG             = -g
+INCLUDES	= -I../include
+CCFLAGS         = $(DBG) -O3 -DLINUX -DREFTEK $(INCLUDES) 
+FFLAGS          = $(DBG) -DLINUX -DREFTEK -fno-globals $(INCLUDES) 
+LDFLAGS  	=
+OS		= Linux  
+LIBS     	= 
+CLOC		= ../src/C
+FLOC		= ../src/Fortran
+TOOLLOC		= ../ToolsLib
+
+	
