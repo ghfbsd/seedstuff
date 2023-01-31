@@ -80,3 +80,8 @@ $(OBJ)/%.o: %.f
 	$(FC) $(FCUSED) -c $*.f -o $@
 
 $(OBJ)/copy_seed.o $(OBJ)/make_dlsv.o $(OBJ)/cre_seed_head_sub.o $(OBJ)/copy_seed_sub.o: ../include/head_seed.inc
+
+$(OBJ)/check_file.o $(OBJ)/check_qic.o $(OBJ)/check_seed.o $(OBJ)/check_tape.o \
+   $(OBJ)/copy_seed.o $(OBJ)/extr_file.o $(OBJ)/extr_qic.o $(OBJ)/extr_tape.o \
+   $(OBJ)/make_dlsv.o $(OBJ)/make_qseed.o $(OBJ)/read_seed.o \
+   $(OBJ)/swap_mseed.o: ../include/version.inc
