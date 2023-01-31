@@ -301,3 +301,19 @@ src/Fortran/cre_seed_head_sub.f:
 src/Fortran/make_dlsv.f:  Don't overwrite dataless.seed because block SEED i/o
    will not truncate the output file and junk may be left at the end of a
    previous dataless SEED.  Warn and say to remove before re-running.
+
+2023 30 Jan./GRH
+configure.ac:
+   Fix problems with -m32 OK for C but not Fortran.  Add -std=legacy to
+   Fortran compile flags to prevent bogus compile errors.
+ToolsLib/*.c:
+   Fix various gripes about compilation warnings.
+
+2023 31 Jan./GRH
+Makefile.in:
+   Add "make newversion"
+Makefile:
+   (regenerate)
+src/Fortran//Make.any.Targets:
+   Add dependencies for version.inc
+
