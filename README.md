@@ -1,7 +1,7 @@
-# GEOFON seedstuff SEED writing tools
+# GEOFON SeedStuff SEED writing tools
 
 These routines heavily modified by G. Helffrich/U. Bristol since obtained
-in 1995 from W. Hanka.  They form a useful set of utilities to handle
+in 1995 from W. Hanka of GEOFON.  They form a useful set of utilities to handle
 mseed data and package it into SEED volumes given time windows.  Main
 programs are:
 
@@ -45,16 +45,16 @@ handling
 
 Finally, these programs were changed to compile and run properly with `gfortran`.
 This is a bigger headache that you think due to the way that `g77` and
-gfortran handle fixed-format input:  `g77` is lenient, while `gfortran` is strict.
+`gfortran` handle fixed-format input:  `g77` is lenient, while `gfortran` is strict.
 (Long lines that extend beyond column 71 but that are valid Fortran are accepted
 by `g77` but truncated by `gfortran`.)  Usually this leads to syntax errors, but
 occasionally it leads to a subtly malfunctioning program.  There may
 still be (rare) bugs of this sort.
 
-Other gfortran compatibility problems that were fixed are:
+Other `gfortran` compatibility problems that were fixed are:
 
 1) the `g77` runtime library allowed the same file to be attached to multiple
-i/o units; gfortran's does not.
+i/o units; `gfortran`'s does not.
 
 2) `g77` runtime returns -1 for EOF on read, used by these programs to tell the
 difference between an i/o error and EOF.  The only reliably-defined codes are
@@ -82,8 +82,8 @@ The options `--prefix=` and `BINDIR=` control where the programs are installed w
 If you don't have a Fortran compiler on your machine but you do have a C
 compiler, you will find the `f2c` package in contrib to convert to C.  There
 is no automatic configuration for this procedure; you are on your own to develop
-a command that uses f2c to compile Fortran using C to object code files.  fort77
-is such a program that is available from online source repositories.
+a command that uses f2c to compile Fortran using C to object code files.
+`fort77` is such a program that is available from online source repositories.
 
 Some gfortran compiler builds default to 32 bit output; others default to 64.
 If the defaults differ between the C and Fortran compilers, explicitly force
@@ -93,7 +93,7 @@ default, add the `-m32` option to your CFLAGS, for example by
 `./configure CFLAGS=-m32`
 
 ## Compile history
-'''
+```
 SeedStuff - Original version by Winfried Hanka, GFZ Potsdam for GEOFON network.
 
 Past versions of SeedStuff were compiled and tested with the following sytems.
@@ -130,4 +130,7 @@ Darwin 8       - gcc version 4.0.1 (Apple Inc. build 5367)
 
 Darwin 10      - gcc version 4.2.1 (Apple Inc. build 5664)
 	       - g77 version 3.4.3 and gfortran
-'''
+
+Darwin 18      - Apple LLVM 10.0.1
+               - gfortran 11.2.0
+```
