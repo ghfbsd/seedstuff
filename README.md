@@ -29,6 +29,13 @@ programs are:
    and creating file names acceptable for use with the GEOFON SEED writing
    programs.
 
+## Documentation
+
+Sketchy.  Run each program with no command line parameters to get a fairly
+helpful summary of program options.
+
+## History
+
 The basic differences between the GFZ versions and the present ones are in
 handling
 1) Y2K problems (yes, there were some);
