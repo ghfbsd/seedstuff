@@ -131,6 +131,6 @@ Darwin 8       - gcc version 4.0.1 (Apple Inc. build 5367)
 Darwin 10      - gcc version 4.2.1 (Apple Inc. build 5664)
 	       - g77 version 3.4.3 and gfortran
 
-Darwin 18      - Apple LLVM 10.0.1
+Darwin 18      - cc Apple LLVM 10.0.1
                - gfortran 11.2.0
 ```
