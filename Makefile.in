@@ -67,6 +67,11 @@ clean_utils:
 		(cd contrib/utils; $(MAKE) distclean) ; \
 	fi
 
+newversion:
+	F=$$(date "+%j.%Y") ; \
+	echo "      data version/'  Version XXXX'/" | \
+	   sed -e "s/XXXX/$$F/" > src/include/version.inc
+
 pkg:	clean_utils
 	@echo "Cleaning out all binary and obj files ..."
 	-for i in Linux Solaris SunOS4.1.x Darwin FreeBSD ; do \
