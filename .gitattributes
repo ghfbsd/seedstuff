@@ -1,4 +1,5 @@
 src/include/*.inc linguist-language=Fortran
 ToolsLib/avltree.h linguist-language=C
-cfg/*.[0-9] linguist-language=Text
-src/*.Targets linguist-language=Makefile
+cfg/*.1 linguist-language=Text
+cfg/*.2 linguist-language=Text
+src/**/*.Targets linguist-language=Makefile
