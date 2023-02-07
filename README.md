@@ -6,7 +6,7 @@ mseed data and package it into SEED volumes given time windows.  Main
 programs are:
 
 * check_seed - Verifies that data is continuous and that data counts in mseed
-   blockettes agrees with the number of samples in the blockettes.
+   blockettes agree with the number of samples in the blockettes.
 
 * make_qseed - Reblocks mseed data into 4096 byte blocks and names output
    files in a way consistent with copy_seed use.  Will also change
@@ -47,8 +47,9 @@ handling
    result was returned ... eh?);
 5) the configuration file format for response descriptions was extended to
    allow for a range of FIR coefficients rather than a list (e.g. 1-5 for FIR
-   coeffs. 1 to 5 rather than 1/2/3/4/5); and
-6) creating an automatic configuration procedure.
+   coeffs. 1 to 5 rather than 1/2/3/4/5);
+6) include the analog response of the digitizer in the response information;
+7) and creating an automatic configuration procedure.
 
 Finally, these programs were changed to compile and run properly with `gfortran`.
 This is a bigger headache that you think due to the way that `g77` and
@@ -84,7 +85,7 @@ You can get a summary of configure options by issuing
 `./configure --help`
 
 The options `--prefix=` and `BINDIR=` control where the programs are installed when
-'make install' is used.
+`make install` is used.
 
 If you don't have a Fortran compiler on your machine but you do have a C
 compiler, you will find the `f2c` package in contrib to convert to C.  There
@@ -94,7 +95,7 @@ a command that uses f2c to compile Fortran using C to object code files.
 
 Some gfortran compiler builds default to 32 bit output; others default to 64.
 If the defaults differ between the C and Fortran compilers, explicitly force
-the C compiler to the Fortran default.  E.g., if gfortran is 32 bit by
+the C compiler to the Fortran default.  E.g., if `gfortran` is 32 bit by
 default, add the `-m32` option to your CFLAGS, for example by
 
 `./configure CFLAGS=-m32`

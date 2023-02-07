@@ -38,13 +38,14 @@ c   Digitizer dictionary
         parameter(mx_digit_abbr=10)
 	integer digit_inp_unit_lkp(mx_digit_abbr)
 	integer digit_outp_unit_lkp(mx_digit_abbr)
+        integer resp_digit_pz(mx_digit_abbr)
 	character resp_digit_nam(mx_digit_abbr)*25
 	real*4 digit_rate(mx_digit_abbr)
 	real*4 digit_gain_fac(mx_digit_abbr)
 	real*4 digit_gain_freq(mx_digit_abbr)
 	common /digitd/digit_inp_unit_lkp,digit_outp_unit_lkp
 	common /digitd/digit_rate,digit_gain_fac,digit_gain_freq
-        common /digitd/resp_digit_nam
+	common /digitd/resp_digit_pz,resp_digit_nam
 c   Coefficients dictionary
         parameter(mx_coeff_abbr=25, mx_digit_stage=11)
 	integer coeff_abbr_lkp(mx_coeff_abbr)

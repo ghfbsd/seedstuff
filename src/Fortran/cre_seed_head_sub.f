@@ -237,27 +237,44 @@ c
 9103            format(' stage ',i2,': gain ',1pg12.4,' at ',0pf7.3)
 	        istat=write_chan_sens_gain(idsk,1,stag_gain(1,mm,nn),
      &	        gain_paz_freq(pzlk),ncbl,blockette,ncnt,string,num)
+
 c
 	        dglk=resp_lkp(2,mm,nn)
-	        istat=write_resp_coeff(idsk,'D',2,digit_inp_unit_lkp
-     &	        (dglk),digit_outp_unit_lkp(dglk),0,0.0,0,0.0,ncbl,
-     &	        blockette,ncnt,string,num)
-	        istat=write_deci(idsk,2,digit_rate(dglk),1,0.0,0.0,
-     &	        ncbl,blockette,ncnt,string,num)
+                pzlk=resp_digit_pz(dglk)
+                if (0 .eq. pzlk) then
+c                 If no analog response for digitizer, write a x1 decimation
+c                 stage description with the digitizer sensitivity in it.
+	          istat=write_resp_coeff(idsk,'D',2,digit_inp_unit_lkp
+     &	          (dglk),digit_outp_unit_lkp(dglk),0,0.0,0,0.0,ncbl,
+     &	          blockette,ncnt,string,num)
+	          istat=write_deci(idsk,2,digit_rate(dglk),1,0.0,0.0,
+     &	          ncbl,blockette,ncnt,string,num)
+                else
+c                 Analog response for digitizer, write pole-zero and
+c                 digitizer sensitivity for it.
+	          istat=write_resp_paz(idsk,'A',2,paz_inp_lkp(pzlk),
+     &	          paz_out_lkp(pzlk),norm_fac(pzlk),norm_freq(pzlk),
+     &	          no_zeros(pzlk),zeros(1,pzlk),no_poles(pzlk),poles
+     &	          (1,pzlk),ncbl,blockette,ncnt,string,num)
+                endif
                 if(optshd)write(*,9103)
-     &             2,stag_gain(2,mm,nn),digit_gain_freq(dglk)
+     &            2,stag_gain(2,mm,nn),digit_gain_freq(dglk)
 	        istat=write_chan_sens_gain(idsk,2,stag_gain(2,mm,nn),
      &	        digit_gain_freq(dglk),ncbl,blockette,ncnt,string,num)
-c
+
+c               Write FIR stages if present and requested
+                   
 	        if(no_stag(mm,nn).gt.2.and.id_short.ne.1) then
 		  if(optshd) then
-		    write(*,*) '**Output long stage info ',
-     &                'chan ',mm,' of sta ',nn,no_stag(mm,nn),' stages'
+9104                format(2a,i2,a,2(1x,i2),a)
+		    print 9104,'**Output long stage info ',
+     &                'chan ',mm,' of sta',nn,no_stag(mm,nn),' stages'
                   endif
 	          do k=3,no_stag(mm,nn)
 	            colk=resp_lkp(k,mm,nn)
 		    if(optshd) then
- 	              write(*,*) '**Stage ',k,', resp_lkp ',colk,
+9105                  format(a,i2,a,i2,a,i3)
+ 	              print 9105,'**Stage ',k,', resp_lkp ',colk,
      &                  ', no_num ',no_num(colk)
                     endif
 		    if (no_num(colk).gt.0) then

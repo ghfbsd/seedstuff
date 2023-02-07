@@ -245,7 +245,9 @@ c
 	    enddo
 	  endif
 	enddo
-c
+
+c       Old form has 7 fields, new 8.
+
 	next=0
         istat=get_string(unit1,next,'Resp_digit',lens,string)
 	do while (istat.eq.0)
@@ -253,7 +255,16 @@ c
 	  if (nn.gt.mx_digit_abbr.or.nn.le.0) then
 	    write(0,*) '**Resp_digit - lookup key ',
      &        nn,' must be > 0 and <= ',mx_digit_abbr
+          else if (parse_real(string,8,test).eq.0) then
+	    istps=parse_char(string,2,resp_digit_nam(nn))
+	    istps=parse_int(string,3,resp_digit_pz(nn))
+	    istps=parse_int(string,4,digit_inp_unit_lkp(nn))
+	    istps=parse_int(string,5,digit_outp_unit_lkp(nn))
+	    istps=parse_real(string,6,digit_rate(nn))
+	    istps=parse_real(string,7,digit_gain_fac(nn))
+	    istps=parse_real(string,8,digit_gain_freq(nn))
           else
+	    resp_digit_pz(nn)=0
 	    istps=parse_char(string,2,resp_digit_nam(nn))
 	    istps=parse_int(string,3,digit_inp_unit_lkp(nn))
 	    istps=parse_int(string,4,digit_outp_unit_lkp(nn))
@@ -410,7 +421,9 @@ c
      &                      angle(nch,nst_tot),dip(nch,nst_tot),
      &                      orate(nch,nst_tot)
 		  endif
-c
+
+c                 Sensor and digitizer characteristics
+
 		  mm=0
 	          do i=11,12
 	            istps=parse_char(string,i,dstring)
@@ -423,11 +436,14 @@ c
      &                    stag_gain(mm,nch,nst_tot)
 	            endif
 		    if (optpar) then
- 		       write(*,*) '..resp_lkp(',mm,nch,nst_tot,') = ',
-     &         		  resp_lkp(mm,nch,nst_tot)
+ 		      print 3001,'..resp_lkp(',mm,nch,nst_tot,') = ',
+     &         	        resp_lkp(mm,nch,nst_tot)
                     endif
 	          enddo
-c
+3001              format(a,3(1x,i2),a,i2)
+
+c                 FIR stages
+
 	          istps=parse_char(string,13,dstring)
 	          if(dstring.ne.'0/0') then
 c                   Parse strings of form "m", "m/n", "m-n"
