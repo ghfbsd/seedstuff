@@ -326,3 +326,11 @@ src/Fortran/copy_seed_sub.f:
    (parse_seed_db): Parse analog digitizer response.
 src/Fortran/cre_seed_head_sub.f:
    (cre_head_seed): Write out analog digitizer response if present.
+
+2020 9 Feb./GRH
+src/include/version.inc:
+   Bump version to 040.2023
+src/Fortran/cre_seed_head_sub.f:
+   (cre_head_seed): Fix bug in writing out FIR coefficients; format used
+   to depend on initial character of file name!  Checks format to make sure
+   format is as expected and writes error message if bad.

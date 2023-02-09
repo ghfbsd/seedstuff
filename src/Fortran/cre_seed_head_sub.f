@@ -281,23 +281,16 @@ c               Write FIR stages if present and requested
 	              i=lenc(resp_coeff_pfx)
 	              open(unit2,file=resp_coeff_pfx(1:i) // '/' //
      &                          resp_coeff_nam(colk),status='old')
-                      if(0.ne.index('DR',resp_coeff_nam(colk)(1:1)))
-     &                then
-                        do i=1,min(no_num(colk),numer_mx)
-                          read(unit2,*) ie,numer(i)
-                        enddo
-                      else
-                        read(unit2,*,iostat=ios)
-			i=0
-                        ie=0
-                        do while (ie.lt.min(no_num(colk),numer_mx)
-     &                            .and.ios.eq.0)
-                          ia=ie+1
-                          ie=min(ia+4,no_coeff_abbr)
-                          read(unit2,*,iostat=ios) (numer(i),i=ia,ie)
-                        enddo
-			if(ios.ne.0) no_num(colk)=i-1
-		      endif
+                      ie=lenc(resp_coeff_nam(colk))
+9106                  format('**Bad FIR coefficient file: ',a,'skip.')
+                      nerr=0
+                      do i=1,min(no_num(colk),numer_mx)
+                        read(unit2,*,iostat=ios) ie,numer(i)
+                        if((i.ne.ie .or. ios.ne.0) .and. nerr.eq.0)then
+                          print 9106,resp_coeff_nam(colk)(1:ie)
+                          nerr=nerr+1
+                        endif
+                      enddo
                       close(unit2)
                     endif
 	            istat=write_resp_coeff(idsk,'D',k,
