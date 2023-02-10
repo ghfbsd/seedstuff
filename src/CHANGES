@@ -334,3 +334,12 @@ src/Fortran/cre_seed_head_sub.f:
    (cre_head_seed): Fix bug in writing out FIR coefficients; format used
    to depend on initial character of file name!  Checks format to make sure
    format is as expected and writes error message if bad.
+
+2020 10 Feb./GRH
+src/include/version.inc:
+   Bump version to 041.2023
+src/Fortran/make_qseed.f:
+   Fix bugs:
+   1) Zeroed out all Steim-1 data frames after first block when reblocking to
+   4096.
+   2) If gap in data, fix/recalculate sample count in truncated block.

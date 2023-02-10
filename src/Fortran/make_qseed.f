@@ -210,9 +210,16 @@ c	write(*,*) next_tim,anf_tim,diff
      &	  'instead of',itgn,monn,iyrn,ihn,imn,isn,intsc
 c
 	  if(nout.gt.0) then
-	    obuf(1+begdat/4+2) = ric
+c           Time discontinuity.  Zero all words to end of buffer.  Recalculate
+c           number of samples in continuous data up to end of buffer and reset.
+	    ib = begdat/4
+	    obuf(1+ib+2) = ric
 	    do i=1,1024-nout
 	      obuf(nout+i) = 0
+	    enddo
+	    nsblk=nssamp(obuf(1+ib))
+	    do i=1,(4096-begdat)/64-1
+	      nsblk=nsblk+nssamp(obuf(1+ib+16*i))
 	    enddo
 	    nreco=nreco+1
             istat=def_fixhead_ful(nreco,stat,chan,net_id,real(dt),
@@ -263,19 +270,12 @@ C         it is the beginning of the Steim data (if subsequent block of group)
 	enddo
 c
 	if(nout.ge.1024) then
-C         Recalculate samples in all Steim frames, but honor the sample
-C           count in the blockette (unless overriden by -R).  Zero control
-C           words in excess frames.
+C         Recalculate samples in all Steim frames.
 	  ib = begdat/4
 	  ns=nssamp(obuf(1+ib))
 	  do i=1,(4096-begdat)/64-1
-	    if (ns.ge.nsamp) then
-	      obuf(1+ib+16*i) = 0
-	    else
-	      ns=ns+nssamp(obuf(1+ib+16*i))
-	    endif
+	    ns=ns+nssamp(obuf(1+ib+16*i))
 	  enddo
-	  ns=min(nsamp,ns)
 	  obuf(1+ib+2) = ric
 	  nreco=nreco+1
 	  istat=def_fixhead_ful(nreco,stat,chan,net_id,real(dt),
