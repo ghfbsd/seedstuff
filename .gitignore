@@ -6,7 +6,6 @@ autom4te.cache/
 bin/
 config.log
 config.status
-configure
 contrib/
 lib/
 mkconf/*.FLAGS
