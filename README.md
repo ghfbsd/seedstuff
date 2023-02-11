@@ -49,7 +49,9 @@ handling
    allow for a range of FIR coefficients rather than a list (e.g. 1-5 for FIR
    coeffs. 1 to 5 rather than 1/2/3/4/5);
 6) include the analog response of the digitizer in the response information;
-7) and creating an automatic configuration procedure.
+7) add capability of describing station SOH channels in the network database
+   file and generating response information for them;
+8) and creating an automatic configuration procedure.
 
 Finally, these programs were changed to compile and run properly with `gfortran`.
 This is a bigger headache that you think due to the way that `g77` and
