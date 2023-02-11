@@ -7,7 +7,7 @@ c
 	character buffer*4096,seed_in*132,seed_out*256,idir*32,odir*64
         character dummy*80,nid*2,band*1,fmt(2)*2
 	equivalence(ibuf,buffer),(obuf,obbuf,cbuf,hbuf)
-	logical swp
+	logical swp, adc
 	parameter (idsc1=1,idsc2=2)
 c
 	character stat*5,chan*3,net_id*2,strng*1,
@@ -97,17 +97,18 @@ c
 	istat=dec_fixhead(num,stat,chan,net_id,rate,begdat,iftim,iftsc,
      &	  timcor,nsamp,form,reclen,buffer)
 	swp=form/256 .ne. bo
+        adc=0 .ne. index('AO',chan(1:1))
 c
 	if(iesr.eq.1) then
 	  read(sesr,*,iostat=ios) rate
 	  if(ios.ne.0) stop '**ERROR:  Bad -s value'
+          if(rate.lt.0) rate=-1./rate
         endif
-	if(rate.lt.1.) rate=1./rate
  	if(inst.eq.1) stat=stat_new
 	if(inet.eq.1) then
 	  net_id=nid
 	else
-	  net_id='YY'
+	  if (net_id.eq.' ') net_id='YY'
 	endif
 	if(ibnd.eq.1) then
 	  chan(1:1)=band
@@ -118,9 +119,12 @@ c
 	  if(rate.lt.10.0) stream='M'
 	  if(rate.le.1.00) stream='L'
  	endif
-	if(chan(3:3).eq.'1'.or.chan(3:3).eq.'4') chan=stream//'HZ'
-	if(chan(3:3).eq.'2'.or.chan(3:3).eq.'5') chan=stream//'HN'
-	if(chan(3:3).eq.'3'.or.chan(3:3).eq.'6') chan=stream//'HE'
+        if (.not.adc) then
+c         Rename if not admin channel
+	  if(chan(3:3).eq.'1'.or.chan(3:3).eq.'4') chan=stream//'HZ'
+	  if(chan(3:3).eq.'2'.or.chan(3:3).eq.'5') chan=stream//'HN'
+	  if(chan(3:3).eq.'3'.or.chan(3:3).eq.'6') chan=stream//'HE'
+        endif
 c
 	if(nrec.eq.1) then
 	  call abstim(0,iftim,iyrf,idyf,ihf,imf,isf)

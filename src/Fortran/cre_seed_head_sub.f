@@ -11,7 +11,7 @@ c
 	integer stat_lkup(*),no_chan(*),chan_lkup(100,15),ser_st_idx
      &	(100,100,15),ser_end_idx(100,100,15),no_ser(100,15),num_sthd
      &	(100),ibuf(1024)
-	real rate(100,15),numer(numer_mx)
+	real rate(100,15),numer(numer_mx),freq
 	real*8 rnd_tim,anf_tim,end_tim,start_etim,end_etim,
      &  span_st_tim(*),span_end_tim(*),
      &  ser_st_tim(100,100,15),ser_end_tim(100,100,15)
@@ -228,15 +228,31 @@ c
      &	        upd_fl,ncbl,blockette,ncnt,string,num)
 c
 	        pzlk=resp_lkp(1,mm,nn)
-	        istat=write_resp_paz(idsk,'A',1,paz_inp_lkp(pzlk),
-     &	        paz_out_lkp(pzlk),norm_fac(pzlk),norm_freq(pzlk),
-     &	        no_zeros(pzlk),zeros(1,pzlk),no_poles(pzlk),poles
-     &	        (1,pzlk),ncbl,blockette,ncnt,string,num)
-                if(optshd)write(*,9103)
-     &             1,stag_gain(1,mm,nn),gain_paz_freq(pzlk)
+                if (pzlk.gt.0) then
+	          istat=write_resp_paz(idsk,'A',1,paz_inp_lkp(pzlk),
+     &	          paz_out_lkp(pzlk),norm_fac(pzlk),norm_freq(pzlk),
+     &	          no_zeros(pzlk),zeros(1,pzlk),no_poles(pzlk),poles
+     &	          (1,pzlk),ncbl,blockette,ncnt,string,num)
+                  if(optshd)write(*,9103)
+     &              1,stag_gain(1,mm,nn),gain_paz_freq(pzlk)
+                    freq=gain_paz_freq(pzlk)
+                else
+c                 No sensor pole-zero probably means no sensor; stream is
+c                 internal to datalogger or sensor (T, V, mass pos).  Since
+c                 there is no "sensor", it just passes input units to output.
+	          dglk=resp_lkp(2,mm,nn)
+	          istat=write_resp_coeff(idsk,'D',1,
+     &            digit_inp_unit_lkp(dglk),digit_inp_unit_lkp(dglk),
+     &            0,0.0,0,0.0,ncbl,blockette,ncnt,string,num)
+	          istat=write_deci(idsk,1,digit_rate(dglk),1,0.0,0.0,
+     &	          ncbl,blockette,ncnt,string,num)
+                  if(optshd)write(*,9103)
+     &              1,stag_gain(1,mm,nn),digit_gain_freq(dglk)
+                  freq=digit_gain_freq(dglk)
+                endif
 9103            format(' stage ',i2,': gain ',1pg12.4,' at ',0pf7.3)
 	        istat=write_chan_sens_gain(idsk,1,stag_gain(1,mm,nn),
-     &	        gain_paz_freq(pzlk),ncbl,blockette,ncnt,string,num)
+     &	          freq,ncbl,blockette,ncnt,string,num)
 
 c
 	        dglk=resp_lkp(2,mm,nn)

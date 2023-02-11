@@ -11,7 +11,8 @@ c
 	    lenstr=lenc(string)
 	    if(index(string,'>').gt.0) lenstr=index(string,'>')-1
 c	write(*,*) lenstr,index(string,'>')
-	    if(string(1:1).eq.'-') then
+	    if(string(1:1).eq.'-' .and.
+     &         0.eq.index('0123456789',string(2:2))) then
 	      nopt=nopt+1
 	      opt(nopt)=string(2:lenstr)
 	      if(nopt.gt.nval+1) then

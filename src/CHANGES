@@ -337,9 +337,13 @@ src/Fortran/cre_seed_head_sub.f:
 
 2020 10 Feb./GRH
 src/include/version.inc:
-   Bump version to 041.2023
+   Bump version to 042.2023
 src/Fortran/make_qseed.f:
    Fix bugs:
-   1) Zeroed out all Steim-1 data frames after first block when reblocking to
-   4096.
+   1) Incorrectly zeroed out all Steim-1 data frames after first block when
+      reblocking to 4096.
    2) If gap in data, fix/recalculate sample count in truncated block.
+   3) If no replacement network code, only set YY network code if originally
+      blank.
+   4) Increased sizes of format and unit abbr. dictionaries
+   5) Extended to handle SOH channel output (temperature, voltage, mass pos.)

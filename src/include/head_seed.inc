@@ -3,7 +3,7 @@ c
 c   Abbreviations
 c
 c   Format abbreviation
-        parameter (nfaemx=2,ndkmx=10)
+        parameter (nfaemx=4,ndkmx=10)
 	integer form_abbr_lkup(nfaemx),fam_typ(nfaemx)
 	character form_name(nfaemx)*50,ddl_key(ndkmx)*60
 	common /formd/no_form_abbr,form_abbr_lkup,fam_typ,no_ddl_key,
@@ -19,7 +19,7 @@ c   Instrument abbreviation
 	character inst_name(niaemx)*50
 	common /instd/no_inst_abbr,inst_abbr_lkup,inst_name
 c   Unit abbreviation
-        parameter (nuaemx=5)
+        parameter (nuaemx=10)
 	integer unit_abbr_lkup(nuaemx)
 	character unit_abbr(nuaemx)*20,unit_desc(nuaemx)*50
 	common /unitd/no_unit_abbr,unit_abbr_lkup,unit_abbr,unit_desc
