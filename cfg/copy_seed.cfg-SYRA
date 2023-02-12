@@ -1,0 +1,183 @@
+#       copy_seed Configuration File
+#
+#	SYRA deployment
+#
+#       Abbreviation Dictionaries
+#
+# Format_abbr: Abbreviation dictionary for formats of data records
+# Parameter: 1 - format identifier code, 2 - format name, 3 - family type, 
+# 4 - ddl keys 
+# Here: DDL description of Steim-1 data compression scheme
+# (see SEED Manual Vers.2.3, pp 151)
+#
+Format_abbr> 1 Steim_Integer_Compression_Format 50 ->
+	-> F1_P4_W4_D0-31_C2_R1_P8_W4_D0-31_C2 ->
+	-> P0_W4_N15_S2,0,1 ->
+	-> T0_X_N0_W4_D0-31_C2 ->
+	-> T1_N0_W1_D0-7_C2_N1_W1_D0-7_C2_N2_W1_D0-7_C2_N3_W1_D0-7_C2 ->
+	-> T2_N0_W2_D0-15_C2_N1_W2_D0-15_C2 ->
+	-> T3_N0_W4_D0-31_C2
+Format_abbr> 2 16_bit_integer 0 ->
+        -> M0_W2
+Format_abbr> 3 32_bit_IEEE_floating_point 1 ->
+        -> M0_W4_D0-22_S31,0_D23-30_E2:-127_H_Z0
+#        
+# Inst_abbr: Abbreviation dictionary for seismometers
+# Parameter: 1 - instrument lookup code, 2 - seismometer type
+#
+Inst_abbr> 1 Streckeisen_STS-1V/VBB_Seismometer
+Inst_abbr> 2 Streckeisen_STS-1H/VBB_Seismometer
+Inst_abbr> 3 Streckeisen_STS-2_Seismometer
+Inst_abbr> 4 Streckeisen_STS-1V_Seismometer
+Inst_abbr> 5 Streckeisen_STS-1H_Seismometer
+Inst_abbr> 6 Guralp_CMG-3T_seismometer
+Inst_abbr> 7 Temperature_sensor
+Inst_abbr> 8 Station_voltage
+#
+# Unit_abbr: Abbreviation dictionary for used units
+# Parameters: 1 - unit lookup code, 2 - unit name, 3 - unit description
+#
+Unit_abbr> 1 COUNTS Digital_Counts
+Unit_abbr> 2 COUNTS/V Counts_per_Volt
+Unit_abbr> 3 M/S Velocity_in_Meters_per_Second
+Unit_abbr> 4 V Volts
+Unit_abbr> 5 A Amperes
+Unit_abbr> 6 C Celsius
+#
+# Comment: Comment dictionary
+# Parameters: 1 - comment lookup code, 2 - comment
+#
+Comment> 1 S Located_in_outbuilding_in_agricultural_area
+Comment> 2 S N-S_component_noise_between_0700-1400_due_to_farm_work
+Comment> 3 S Power_outage:_2008/02/17_10:10-2008/02/18_13:01_due_to_heavy_snow!
+#
+#       Response Dictionaries
+#
+# Analog stages (seismometer & analog filters): Poles & zeros representation (PAZ)
+# Parameters: 1 - response lookup key, 2 - response name, 3 - no of zeros,
+#   4 - no of poles, 5 - norm. factor, 6 - norm. freq. (rad/s), 7 - stage gain,
+#   8 - gain freq. (Hz), 9 - input units key, 10 - output units key,
+#  11 - zeros, 12 - poles
+#
+#   GRF PAZ response
+Resp_paz> 1 GRF-PAZ 2 9 3.0202814e10 1.0 3.0202814e10 1.0 3 4 ->
+	-> (0.0,0.0) (0.0,0.0) ->
+	-> (-31.416,0.0) ->
+	-> (-0.222,0.222) (-0.222,-0.222) (-7.006,30.625) (-7.006,-30.625) ->
+	-> (-19.572,24.574) (-19.572,-24.574) (-28.306,13.629) (-28.306,-13.629)
+#   STS-1/VBB PAZ response
+Resp_paz> 2 STS-1/VBB-PAZ 2 4 3948.58 0.02 2400.0 0.02 3 4 ->
+	-> (0.0,0.0) (0.0,0.0) ->
+	-> (-0.01234,0.01234) (-0.01234,-0.01234) (-39.18,49.12) (-39.18,-49.12)
+#   STS-2 PAZ response
+Resp_paz> 3 STS-PAZ 2 5 6.0077E+07 0.02 1500.0 0.02 3 4 ->
+	-> (0.0,0.0) (0.0,0.0) ->
+	-> (-0.037004,-0.037016) (-0.037004,0.037016) (-251.33,0.0) ->
+	-> (-131.04,-467.29) (-131.04,467.29)
+#   CMG-3T PAZ response - GFZ below, taken from IRIS/PASSCAL
+#Resp_paz> 4 CMG-3T-PAZ 2 2 1.0 0.04 1500.0 0.04 3 4 ->
+#	-> (0.0,0.0) (0.0,0.0) ->
+#	-> (-0.04442,-0.04442) (-0.04442,0.04442)
+Resp_paz> 4 CMG-3T 3 4 -290.22 6.28319 1500.0 1.0 3 4 ->
+	-> (0.0,0.0) (0.0,0.0) (920.48665,0.0) ->
+	-> (-0.03701,0.03701) (-0.03701,-0.03701) ->
+	-> (-459.99292,236.24778) (-459.99292,-236.24778)
+#    Taurus analog response taken from nominal response at:
+#       https://ds.iris.edu/ds/nrl/datalogger/nanometrics/taurus/
+Resp_paz> 5 TaurusPAZ 0 1 1.33389E4 1.0 1.0 1.0 4 1 ->
+        -> (-1.33389E4,0.0)
+#
+# Digitizer stage: coefficients representation
+# Parameters: 1 - response lookup key, 2 - response name, 3 - analog pz resp.,
+#   4 - input units key (V), 5 - output units key (counts),
+#   6 - sampling rate, 7 - gain, 8 - gain freq
+Resp_digit> 1 NMX-Taurus   5 4 1 30e3 400000.0 0.0
+Resp_digit> 2 NMX-Taurus_T 0 6 1 1.6667e-2 1.0 0.0
+Resp_digit> 3 NMX-Taurus_V 0 4 4 1.6667e-2 1e3 0.0
+#
+# FIR filter stages: coefficients representation
+# Parameters: 1 - response lookup key, 2 - response name (file name for coeff.),
+#   3 - no of numer., 4 - no of denom., 5 - input units key (c), 6 - outp. units key (c),
+#   7 - input sampling rate, 8 - decim. factor, 9 - decim. delay,
+#  10 - appl. correction, 11 - gain, 12 - gain freq
+#   Decimation 5120 -> 320 Hz (Q680 - DSP)
+#Resp_coeff> 1 Deci16 64 0 1 1 5120.0 16 0.006 0.0 1.0 0.0
+#   Guralp DM24 256,000 Hz -> 2000 Hz (Stage 1)
+#Resp_coeff> 1 DM24S1 33 0 1 1 256000 8 0.0 0.0 1.0 0.0
+#   Guralp DM24 256,000 Hz -> 2000 Hz (Stage 2)
+#Resp_coeff> 2 DM24S2 13 0 1 1 32000 2 0.0 0.0 1.0 0.0
+#   Guralp DM24 256,000 Hz -> 2000 Hz (Stage 3)
+#Resp_coeff> 3 DM24S3 13 0 1 1 16000 2 0.0 0.0 1.0 0.0
+#   Guralp DM24 256,000 Hz -> 2000 Hz (Stage 4)
+#Resp_coeff> 4 DM24S4 13 0 1 1 8000 2 0.0 0.0 1.0 0.0
+#   Guralp DM24 256,000 Hz -> 2000 Hz (Stage 5)
+#Resp_coeff> 5 DM24S5 101 0 1 1 4000 2 0.0 0.0 1.0 0.0
+#   Guralp DM24 decimate by 10
+#Resp_coeff> 6 DM24D10 1199 0 1 1 2000 10 0.0 0.0 1.0 0.0
+#   Guralp DM24 decimate by 4
+#Resp_coeff> 7 DM24D4 999 0 1 1 200 4 0.0 0.0 1.0 0.0
+#   Guralp DM24 decimate by 5
+#Resp_coeff> 8 DM24D5 1199 0 1 1 50 5 0.0 0.0 1.0 0.0
+#   Guralp DM24 decimate by 10
+#Resp_coeff> 9 DM24D10 1199 0 1 1 10 10 0.0 0.0 1.0 0.0
+#   RefTek 72A02 decimate by 5 soft (filter 2)
+#Resp_coeff> 10 R72A0225S 99 0 1 1 1000 5 0.0 0.0 1.0 0.0
+#   RefTek 72A02 decimate by 4 hard (filter 4)
+#Resp_coeff> 11 R72A0244H 189 0 1 1 200 4 0.0 0.0 1.0 0.0
+#   RefTek 72A02 decimate by 5 soft (filter 2)
+#Resp_coeff> 12 R72A0225S 99 0 1 1 50 5 0.0 0.0 1.0 0.0
+#   RefTek 72A02 decimate by 5 soft (filter 2)
+#Resp_coeff> 13 R72A0225S 99 0 1 1 10 5 0.0 0.0 1.0 0.0
+#   RefTek 72A02 decimate by 2 hard (filter 3)
+#Resp_coeff> 14 R72A0232H 95 0 1 1 2 2 0.0 0.0 1.0 0.0
+Resp_coeff> 1 T20S1D15 83 0 1 1 30000 15 0.0 0.0 1.0 0.0
+Resp_coeff> 2 T20S2D10 94 0 1 1 2000 10 0.0 0.0 1.0 0.0
+Resp_coeff> 3 T20S3D5 57 0 1 1 200 5 0.0 0.0 1.0 0.0
+Resp_coeff> 4 T20S4D2 112 0 1 1 40 2 0.0 0.0 1.0 0.0
+#
+#       Network Description
+#
+#   Parameter: 1 - network abbr., 2 - FDSN network code, 3 - network name
+#       description <= 50 characters.
+#                          1         2         3         4         5
+#                 12345678901234567890123456789012345678901234567890
+#
+Network> SYROS 6C U_Bristol_Syros_deployment
+#
+#       Station & Channel Description
+#
+# Station descriptor: 1 - station code, 2 - station name, 3 - latitude,
+#   4 - longitude, 5 - elevation, 6 - start of validity year/date,
+#   7 - end of validity year/date
+#
+# Channel descriptor: 1 - channel ident, 2 - instr. key, 3 - input units key,
+#   4 - calib. units key, 5 - local depth, 6 - azimuth, 7 - dip,
+#   8 - format ident key,
+#   9 - sampling rate, 10 - max. clock drift, 11 - PAZ lookup key/gain,
+#  12 - digitizer lkp key/gain, 13 - FIR stages lkp keys or "0/0",
+#  14 - channel sensitivity, 15 - sens. freq (Hz)
+#
+# Check datalogger gain, channel sensitivity, sensitivity frequency.
+#
+# Station location GPS log average (checked), elev. approximate
+Station> SYRA Finikas,_Syros,_Greece 37.40159 24.89266 69.7 2006/180 2008/153
+Station_comment> 1 2006/180 2008/153
+Station_comment> 2 2006/180 2008/153
+Station_comment> 3 2008/048 2008/049
+Channel> BHZ 6 3 5 0.  0. -90. 1 20. 0.02 4/1500. 1/4e5 1-4 6e8 1.0
+Channel> BHN 6 3 5 0.  0.   0. 1 20. 0.02 4/1500. 1/4e5 1-4 6e8 1.0
+Channel> BHE 6 3 5 0. 90.   0. 1 20. 0.02 4/1500. 1/4e5 1-4 6e8 1.0
+Channel> LKL 7 6 6 0.  0.   0. 3 0.016667 0.02 0/1. 2/1.  0/0 1.0 0.0
+Channel> LEV 8 4 4 0.  0.   0. 2 0.016667 0.02 0/1. 3/1e3 0/0 1e3 0.0
+#Station> T3899 Bristol,_UK 51.472667 -2.5995 100.0 2006/147 2006/154
+#Station_comment> 1 2006/147 2006/154
+#Station_comment> 2 2006/147 2006/154
+#Channel> BHZ 6 3 5 0. 0. -90. 1 50. 0.02 4/1500. 1/8e5 1-4 2.4e9 1.0
+#Channel> BHN 6 3 5 0. 0. 0. 1 50. 0.02 4/1500. 1/8e5 1-4 2.4e9 1.0
+#Channel> BHE 6 3 5 0. 90. 0. 1 50. 0.02 4/1500. 1/8e5 1-4 2.4e9 1.0
+#
+#       Data Management Center
+#
+DMC> U._Bristol_Earth_Sciences
+#
+End
