@@ -207,10 +207,16 @@ c	write(*,*) next_tim,anf_tim,diff
 	  call tfix(next_tim,intim,intsc)
 	  call abstim(0,intim,iyrn,idyn,ihn,imn,isn)
 	  call datum(0,idyn,iyrn,monn,itgn)
+          if(diff.lt.0)then
+            dummy='Time-gap in input file:'
+          else
+            dummy='Time-overlap in input file:'
+          endif
+          ib=index(dummy,' ')-1
 	  if(ihead.ne.1)
      &	  write(*,'(2(1x,a,2x,2(i2.2,1h/),i4.4,2x,2(i2.2,1h:),
      &    i2.2,1h.,i4.4))') 
-     &	  'Time-gap in input file: ',itga,mona,iyra,iha,ima,isa,iftsc,
+     &	  dummy(1:ib), itga,mona,iyra,iha,ima,isa,iftsc,
      &	  'instead of',itgn,monn,iyrn,ihn,imn,isn,intsc
 c
 	  if(nout.gt.0) then

@@ -347,3 +347,11 @@ src/Fortran/make_qseed.f:
       blank.
    4) Increased sizes of format and unit abbr. dictionaries
    5) Extended to handle SOH channel output (temperature, voltage, mass pos.)
+
+2020 13 Feb./GRH
+src/include/version.inc:
+   Bump version to 044.2023
+src/Fortran/make_qseed.f:
+   Clarify if time discontinuity a gap or an overlap.
+src/Fortran/check_seed.f:
+   Clarify if time discontinuity a gap or an overlap.
