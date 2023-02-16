@@ -165,7 +165,7 @@ c
 	irec=irec+1
 c
 	if(irec.gt.1) diff=(next_tim-anf_tim)*10000.
-	if(iabs(diff).gt.9999) diff=9999
+	if(iabs(diff).gt.9999) diff=sign(9999,diff)
 c	write(*,*) next_tim,anf_tim,diff
 	if(irec.gt.1 .and. abs(next_tim-anf_tim).gt.dt*0.5 .and.
      &    dt.gt.0.0) then

@@ -200,7 +200,7 @@ c         Also clear control words following frame with last sample in it.
      &    iftim,iftsc,timcor,nsamp,form,12,0,0,0,ibuf)
 c
 	if(nrec.gt.1) diff=(next_tim-anf_tim)*10000.
-	if(iabs(diff).gt.9999) diff=9999
+	if(iabs(diff).gt.9999) diff=sign(9999,diff)
 c	write(*,*) next_tim,anf_tim,diff
 	if(nrec.gt.1 .and. abs(next_tim-anf_tim).gt.dt*0.5 .and.
      &     dt.gt.0.0) then
